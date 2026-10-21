@@ -34,9 +34,14 @@ export async function seedAccount(db: Db): Promise<SeededAccount> {
     { id: customerId, phone: nextPhone(), name: 'Customer' },
   ]);
   await db.insert(s.device).values({ id: deviceId, userId: ownerId, publicKey: 'cHVibGlj' });
-  await db
-    .insert(s.merchant)
-    .values({ id: merchantId, ownerUserId: ownerId, shopName: 'Abebe Suq', createdBy: ownerId });
+  await db.insert(s.merchant).values({
+    id: merchantId,
+    ownerUserId: ownerId,
+    shopName: 'Abebe Suq',
+    termsAcceptedAt: new Date(),
+    termsVersion: 'dube-2026-10',
+    createdBy: ownerId,
+  });
   await db
     .insert(s.merchantStaff)
     .values({ merchantId, userId: ownerId, role: 'owner', createdBy: ownerId });

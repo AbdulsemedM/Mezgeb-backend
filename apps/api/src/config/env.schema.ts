@@ -16,6 +16,10 @@ export const envSchema = z.object({
   OTP_PEPPER: z.string().min(32),
   /** Trust X-Forwarded-For (behind a load balancer) for per-IP OTP limits. */
   TRUST_PROXY: z.stringbool().default(false),
+  /** Base URL of the customer PWA; invite links point here (ADR-006). */
+  PUBLIC_WEB_URL: z.url().default('http://localhost:5173'),
+  /** Outbox poll interval; 0 disables the in-process dispatcher (tests call runOnce). */
+  OUTBOX_POLL_MS: z.coerce.number().int().min(0).default(2000),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

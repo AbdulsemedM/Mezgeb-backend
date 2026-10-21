@@ -51,7 +51,7 @@ describe('migrations', () => {
     const before = await count();
     await runMigrations(t.pool);
     expect(await count()).toBe(before);
-    expect(before).toBe(3);
+    expect(before).toBe(4);
   });
 
   it('install the append-only triggers', async () => {

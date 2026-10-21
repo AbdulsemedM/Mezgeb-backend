@@ -182,12 +182,24 @@ export class OtpService {
         })
         .onConflictDoNothing({ target: appUser.phone })
         .returning();
-      const user = created ?? (await tx.select().from(appUser).where(eq(appUser.phone, phone)))[0]!;
+      const existing =
+        created ?? (await tx.select().from(appUser).where(eq(appUser.phone, phone)))[0]!;
+      // A user created by an invite has no verified phone yet; this is their first sign-in.
+      const isNewUser = existing.phoneVerifiedAt === null;
+      const user = isNewUser
+        ? (
+            await tx
+              .update(appUser)
+              .set({ phoneVerifiedAt: now, updatedAt: now })
+              .where(eq(appUser.id, existing.id))
+              .returning()
+          )[0]!
+        : existing;
 
       // Device errors (conflict, revoked) roll the whole sign-in back, OTP included.
       const dev = await this.devices.register(tx, user.id, reg);
       const pair = await this.tokens.issueForLogin(tx, { userId: user.id, deviceId: dev.id });
-      return { verified: { ...pair, user: toUserView(user), is_new_user: created !== undefined } };
+      return { verified: { ...pair, user: toUserView(user), is_new_user: isNewUser } };
     });
 
     if ('error' in outcome) throw outcome.error;

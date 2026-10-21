@@ -3,10 +3,14 @@ import { LoggerModule } from 'nestjs-pino';
 import { APP_CONFIG, ConfigModule } from './config/config.module.js';
 import type { AppConfig } from './config/env.schema.js';
 import { DbModule } from './db/db.module.js';
+import { AccessModule } from './access/access.module.js';
+import { AccountsModule } from './accounts/accounts.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CommonModule } from './common/common.module.js';
 import { DevicesModule } from './devices/devices.module.js';
 import { HealthModule } from './health/health.module.js';
+import { MerchantsModule } from './merchants/merchants.module.js';
+import { OutboxModule } from './outbox/outbox.module.js';
 import { UsersModule } from './users/users.module.js';
 
 @Module({})
@@ -32,6 +36,10 @@ export class AppModule {
         AuthModule,
         DevicesModule,
         UsersModule,
+        AccessModule,
+        OutboxModule,
+        MerchantsModule,
+        AccountsModule,
       ],
     };
   }

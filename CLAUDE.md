@@ -79,6 +79,22 @@ Backend patterns (M2):
 - `@mezgeb/shared` types resolve to its `src` (no build needed for typecheck/tests); its runtime
   `dist` must be built before running the API (`pnpm build` does this in order).
 
+Backend patterns (M3):
+
+- Permissions: `apps/api/src/access/permissions.ts` is the single table (ADR-006). Guard routes on
+  `/:id` with `@AccountActionRequired('action')` / `@MerchantActionRequired('action')` and read
+  `@CurrentAccountAccess()` / `@CurrentMerchantAccess()`; in services use `AccessService.requireAccount/
+  requireMerchant`. No role → 404, wrong role → 403 `forbidden_for_role`. A new action needs a row in
+  both `permissions.ts` and the expected table in `permissions.test.ts`.
+- Account JSON only via `accountView()` (`accounts/account.views.ts`): strips nickname and
+  location_note for customers and balance for staff.
+- Writes with side effects: in one `db.transaction`, call `AuditService.record(tx, …)` and
+  `OutboxService.enqueueSms(tx, …)`. Creates are idempotent on the client `id`: 201 when created,
+  200 with the original on retry, 409 `id_conflict` if the id belongs to someone else.
+- Outbox: `OutboxDispatcher` polls every `OUTBOX_POLL_MS` (0 in tests; call `t.outbox.runOnce()`).
+- Test helpers in `test/setup/shop.ts`: `createShop(t)`, `addStaff(t, shop)`, `invite(t, shop)`,
+  `acceptInvite(t, invited)`. Mind the 15-minute access token when a test advances the clock.
+
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 
 - `pnpm --filter @mezgeb/api db:generate` — after editing the schema, generate the next migration.

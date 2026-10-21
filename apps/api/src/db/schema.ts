@@ -126,6 +126,8 @@ export const appUser = pgTable(
     name: text('name'),
     language: language('language').notNull().default('am'),
     calendarPref: calendar('calendar_pref'),
+    /** Set on the first OTP verification; null for a user who was only invited (ADR-006). */
+    phoneVerifiedAt: ts('phone_verified_at'),
     createdAt: createdAt(),
     createdBy: createdBy(),
     updatedAt: updatedAt(),
@@ -166,12 +168,15 @@ export const merchant = pgTable(
     landmark: text('landmark'),
     defaultDetailMode: detailMode('default_detail_mode').notNull().default('simple'),
     plan: merchantPlan('plan').notNull().default('free'),
+    termsAcceptedAt: ts('terms_accepted_at').notNull(),
+    termsVersion: text('terms_version').notNull(),
     createdAt: createdAt(),
     createdBy: createdBy(),
     deviceId: deviceId(),
     updatedAt: updatedAt(),
   },
-  (t) => [index('merchant_owner_idx').on(t.ownerUserId)],
+  // One shop per owner in the MVP (ADR-006).
+  (t) => [uniqueIndex('merchant_owner_uq').on(t.ownerUserId)],
 );
 
 /** One owner and at most one staff member per shop (ADR-003), enforced by partial indexes. */
@@ -246,6 +251,7 @@ export const account = pgTable(
     locationNote: text('location_note'),
     status: accountStatus('status').notNull().default('pending'),
     termsAcceptedAt: ts('terms_accepted_at'),
+    termsVersion: text('terms_version'),
     /** Per-customer override of the shop's default detail mode (LED-2). */
     detailMode: detailMode('detail_mode'),
     /** The customer's own view preference. */

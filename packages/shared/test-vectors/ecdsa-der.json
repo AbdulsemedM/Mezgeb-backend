@@ -1,0 +1,82 @@
+{
+  "description": "ECDSA P-256 / SHA-256 signature encodings (ADR-006). raw = IEEE P1363 r||s (WebCrypto); der = ASN.1 DER (wire format, ADR-001). Each signature verifies over the UTF-8 message with public_key_spki_b64.",
+  "public_key_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEsrKUIUd/EJTFXb9pCwecearAJuhDBWxtZDnogBkbRr4IuwM3taQy66JrCYe8B0KVI10v2ulIizlNRhBqHG7eVA==",
+  "cases": [
+    {
+      "name": "r and s without high bit",
+      "message": "mezgeb-vector-0",
+      "raw_hex": "59054ac3af3ee77dc299df8e91c7f4106bd8449b19cf55fb3a137d0288b93f0e5500e120edd482607365d1cce6a3a0b868412050c0c52cebbf3e57cd62d2c39c",
+      "der_hex": "3044022059054ac3af3ee77dc299df8e91c7f4106bd8449b19cf55fb3a137d0288b93f0e02205500e120edd482607365d1cce6a3a0b868412050c0c52cebbf3e57cd62d2c39c"
+    },
+    {
+      "name": "both with high bit",
+      "message": "mezgeb-vector-1",
+      "raw_hex": "f876cb0b8c1dcbe1f3bc2d88b016980ee6cc83955ff72885aa3d7c69c473adbe9fad1e66c4cc90216c836faf3bf5cd0a1d7f77ba708f85ead64f45fa187a0348",
+      "der_hex": "3046022100f876cb0b8c1dcbe1f3bc2d88b016980ee6cc83955ff72885aa3d7c69c473adbe0221009fad1e66c4cc90216c836faf3bf5cd0a1d7f77ba708f85ead64f45fa187a0348"
+    },
+    {
+      "name": "s with high bit (DER adds 0x00)",
+      "message": "mezgeb-vector-2",
+      "raw_hex": "06e2162c85e6c4db719a9e62e4252e85dbcffac20fef370e5d01bddeae5c3a17bc3bf06113ee91f4a50a8d53db6fbef5dfc6149a1c2b801b4bac9190d7d28134",
+      "der_hex": "3045022006e2162c85e6c4db719a9e62e4252e85dbcffac20fef370e5d01bddeae5c3a17022100bc3bf06113ee91f4a50a8d53db6fbef5dfc6149a1c2b801b4bac9190d7d28134"
+    },
+    {
+      "name": "r with high bit (DER adds 0x00)",
+      "message": "mezgeb-vector-4",
+      "raw_hex": "ceaa3df8f8359301c44165ee9a5ff2c2a1b8356c7510f4a403ad170b0e5aeddf560c17cf228e44379229ae20bf4f630aa9b81d727f1bfc8a1e331168590f6ecf",
+      "der_hex": "3045022100ceaa3df8f8359301c44165ee9a5ff2c2a1b8356c7510f4a403ad170b0e5aeddf0220560c17cf228e44379229ae20bf4f630aa9b81d727f1bfc8a1e331168590f6ecf"
+    },
+    {
+      "name": "s with a leading zero byte (DER is shorter)",
+      "message": "mezgeb-vector-190",
+      "raw_hex": "8099a1afeea37bc2489caf90c8cca9d56ef978fe39ac5b31e28b977cad317073007047ae27f75eb418ba6f21dce4a858c13e1bea5508a245ecc4820d01608347",
+      "der_hex": "30440221008099a1afeea37bc2489caf90c8cca9d56ef978fe39ac5b31e28b977cad317073021f7047ae27f75eb418ba6f21dce4a858c13e1bea5508a245ecc4820d01608347"
+    },
+    {
+      "name": "r with a leading zero byte (DER is shorter)",
+      "message": "mezgeb-vector-338",
+      "raw_hex": "00551f7ce1b69188ca561b44f080dccac779a711399fad7659839aa1dcf7144c4ded6d144c907993cfa14ceb14efe8bbc241f638b02e2144957af2fef82ac422",
+      "der_hex": "3043021f551f7ce1b69188ca561b44f080dccac779a711399fad7659839aa1dcf7144c02204ded6d144c907993cfa14ceb14efe8bbc241f638b02e2144957af2fef82ac422"
+    },
+    {
+      "name": "r leading zero, next byte high bit",
+      "message": "mezgeb-vector-356",
+      "raw_hex": "00e2b8c260fb4632015846dc4f6c28f14e285c59d5bdffab934c0b8d035a45fc17aaf802a47c704f4f84817d0675fa31120ee5de5b872632ab91cde24f9de57c",
+      "der_hex": "3044022000e2b8c260fb4632015846dc4f6c28f14e285c59d5bdffab934c0b8d035a45fc022017aaf802a47c704f4f84817d0675fa31120ee5de5b872632ab91cde24f9de57c"
+    }
+  ],
+  "invalid_der_hex": [
+    {
+      "name": "trailing byte",
+      "der_hex": "3044022059054ac3af3ee77dc299df8e91c7f4106bd8449b19cf55fb3a137d0288b93f0e02205500e120edd482607365d1cce6a3a0b868412050c0c52cebbf3e57cd62d2c39c00"
+    },
+    {
+      "name": "wrong outer tag",
+      "der_hex": "3144022059054ac3af3ee77dc299df8e91c7f4106bd8449b19cf55fb3a137d0288b93f0e02205500e120edd482607365d1cce6a3a0b868412050c0c52cebbf3e57cd62d2c39c"
+    },
+    {
+      "name": "outer length mismatch",
+      "der_hex": "3045022059054ac3af3ee77dc299df8e91c7f4106bd8449b19cf55fb3a137d0288b93f0e02205500e120edd482607365d1cce6a3a0b868412050c0c52cebbf3e57cd62d2c39c"
+    },
+    {
+      "name": "non-minimal r (extra 0x00)",
+      "der_hex": "304502210059054ac3af3ee77dc299df8e91c7f4106bd8449b19cf55fb3a137d0288b93f0e02205500e120edd482607365d1cce6a3a0b868412050c0c52cebbf3e57cd62d2c39c"
+    },
+    {
+      "name": "negative r (high bit, no 0x00)",
+      "der_hex": "3044022080054ac3af3ee77dc299df8e91c7f4106bd8449b19cf55fb3a137d0288b93f0e02205500e120edd482607365d1cce6a3a0b868412050c0c52cebbf3e57cd62d2c39c"
+    },
+    {
+      "name": "r longer than 32 bytes",
+      "der_hex": "304502210159054ac3af3ee77dc299df8e91c7f4106bd8449b19cf55fb3a137d0288b93f0e02205500e120edd482607365d1cce6a3a0b868412050c0c52cebbf3e57cd62d2c39c"
+    },
+    {
+      "name": "truncated",
+      "der_hex": "3044022059054ac3af3ee77dc299df8e91c7f4106bd8449b19cf55fb3a137d0288b93f0e02205500e120edd482607365d1cce6a3a0b868412050c0c52cebbf3e57cd62d2"
+    },
+    {
+      "name": "empty",
+      "der_hex": ""
+    }
+  ]
+}
