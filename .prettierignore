@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+pnpm-lock.yaml
+# Docs are hand-written; never reformat them.
+docs
+CLAUDE.md
+**/README.md

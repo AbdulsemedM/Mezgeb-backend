@@ -1,0 +1,73 @@
+# Mezgeb — project context for Claude
+
+Mezgeb ("register" in Amharic) digitizes the Ethiopian neighbourhood *dube* book: a shared,
+two-sided, append-only ledger between a merchant and a regular customer. No money moves
+through Mezgeb, and there is no interest or fee. Full specs live in `docs/specs/`; decisions
+that override or extend the specs live in `docs/decisions/` (decisions win when they conflict).
+
+## Repository layout
+
+- `apps/api` — NestJS (TypeScript) backend. **Built first.**
+- `apps/mobile` — Flutter app for merchants AND customers (roles are per account). Built second.
+- `apps/web` — lightweight customer PWA for the no-install invite link. Built third.
+- `packages/shared` — TypeScript code shared by the API and the PWA: types, limits engine,
+  canonical JSON, money and calendar helpers. The Flutter app ports the same logic to Dart
+  and must pass the same test vectors in `packages/shared/test-vectors/`.
+- `docs/` — specs, decisions, backend plan, the clickable demo (UX reference only, not code to reuse).
+
+## Non-negotiable rules
+
+1. **Entries are append-only.** Never write code that UPDATEs or DELETEs a row in `entry` or
+   `entry_line`. Corrections are new entries with `ref_entry_id`. The server sets `seq`,
+   `prev_hash`, `hash` and `received_at` in the same insert, never afterwards.
+2. **Money is integer santim** (1 ETB = 100 santim). Never use floats for money anywhere.
+3. **Money never touches Mezgeb.** No code that moves, holds or computes interest on funds.
+4. **Every write is idempotent** on a client-generated UUID. Retrying the same request must
+   return the original result, never create a duplicate.
+5. **The server assigns chain order** (see `docs/decisions/ADR-001-entry-chain.md`). Phones never
+   compute `seq`, `prev_hash` or `hash`.
+6. **Offline entries are never rejected** for business reasons (limits, revoked representative).
+   They are posted and flagged. Only malformed or unauthenticated writes are rejected.
+7. **Permissions are checked per account**, from the caller's role on that account
+   (owner, staff, customer), never from a global user role.
+8. **Nickname is private** to the merchant side; never return it in customer-facing responses.
+9. All user-facing text goes through i18n keys (am, om, en). No hard-coded strings in responses
+   that reach users (SMS, push).
+
+## Conventions (backend)
+
+- NestJS modules per spec module: auth, merchants, accounts, ledger, limits, representatives,
+  payments, orders, notifications, sync, statements, vision, dashboard.
+- PostgreSQL with Drizzle ORM; migrations committed; raw SQL allowed where row locking needs it.
+- Queue/outbox: `pg-boss` (Postgres-backed, no Redis).
+- Validation: `zod` schemas in `packages/shared`, reused by the PWA.
+- Tests: Vitest; integration tests against a real Postgres via Testcontainers. Every module
+  ships with tests; the ledger and limits modules need exhaustive tests.
+- Timestamps: RFC 3339 UTC with milliseconds. IDs: UUID v7.
+- API versioned under `/v1`, JSON, errors as `{ code, message, details? }`.
+- External services behind interfaces with a fake implementation for dev/tests:
+  `SmsGateway`, `PushSender`, `ObjectStorage`, `VisionProvider`.
+
+## Commands
+
+Node 22, pnpm 10 (no Bun). Docker must be running for integration tests and local services.
+
+- `pnpm install` — install the workspace.
+- `cp .env.example .env` then `pnpm db:up` / `pnpm db:down` — local Postgres 16 on
+  **localhost:55432** (5432/5433 are taken by local installs on the dev machine) and MinIO on
+  9000 (console 9001, bucket `mezgeb-dev`).
+- `pnpm --filter @mezgeb/api dev` — API in watch mode on :3000, reads `../../.env`.
+- `pnpm test` — all Vitest suites; API integration tests start their own Postgres via Testcontainers.
+- `pnpm --filter @mezgeb/api exec vitest run test/health.int.test.ts` — a single test file.
+- `pnpm lint`, `pnpm typecheck`, `pnpm format` / `pnpm format:check`, `pnpm build`.
+- TypeScript is pinned to 6.x: typescript-eslint doesn't support TS 7 yet.
+- Prettier ignores `docs/`, `CLAUDE.md` and READMEs; never run it over hand-written docs.
+- API test helper: `apps/api/test/setup/test-app.ts` (`startTestApp()` → app on a random port + real DB).
+- Errors: throw `AppError(code, message, status, details?)`; the global filter renders `{ code, message, details? }`.
+
+## How to work in this repo
+
+- Work milestone by milestone from `docs/backend-plan.md`. Don't start the next milestone
+  until the current one's acceptance checks pass.
+- Before changing behaviour described in the specs, check `docs/decisions/`. If something is
+  unclear or the specs conflict, stop and ask rather than guess; record the answer as a new ADR.
