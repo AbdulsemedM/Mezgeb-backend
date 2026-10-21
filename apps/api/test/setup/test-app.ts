@@ -5,25 +5,58 @@ import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testconta
 import pg from 'pg';
 import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/app.setup.js';
+import { Clock, FakeClock } from '../../src/common/clock.js';
 import { runMigrations } from '../../src/db/migrate.js';
-import { createTestDb } from './db.js';
+import { ConsoleSmsGateway, SmsGateway } from '../../src/sms/sms-gateway.js';
+import { createTestDb, type TestDb } from './db.js';
+
+export interface ApiResponse<T = any> {
+  status: number;
+  body: T;
+}
+
+export interface RequestOptions {
+  token?: string;
+  /** Sent as X-Forwarded-For; the test app trusts the proxy header. */
+  ip?: string;
+}
 
 export interface TestApp {
   app: INestApplication;
   baseUrl: string;
+  clock: FakeClock;
+  sms: ConsoleSmsGateway;
+  /** Direct DB access; unset with `ownContainer`. */
+  db?: TestDb;
   /** Set only with `ownContainer: true`, for tests that need to stop the database. */
   container?: StartedPostgreSqlContainer;
+  get<T = any>(path: string, opts?: RequestOptions): Promise<ApiResponse<T>>;
+  post<T = any>(path: string, body?: unknown, opts?: RequestOptions): Promise<ApiResponse<T>>;
+  delete<T = any>(path: string, opts?: RequestOptions): Promise<ApiResponse<T>>;
   close(): Promise<void>;
 }
 
+export const TEST_ENV = {
+  NODE_ENV: 'test',
+  LOG_LEVEL: 'silent',
+  PORT: '0',
+  S3_ENDPOINT: 'http://localhost:9000',
+  S3_BUCKET: 'test',
+  S3_ACCESS_KEY: 'test',
+  S3_SECRET_KEY: 'test',
+  JWT_SECRET: 'test-jwt-secret-0123456789abcdef0123',
+  OTP_PEPPER: 'test-otp-pepper-0123456789abcdef0123',
+  TRUST_PROXY: 'true',
+};
+
 /**
- * Boots the full API on a random port against a fresh, migrated database.
- * By default the database lives in the shared container; `ownContainer` starts a dedicated one.
+ * Boots the full API on a random port against a fresh, migrated database, with a FakeClock
+ * and the in-memory SMS gateway. `ownContainer` starts a dedicated Postgres instead.
  */
 export async function startTestApp(opts: { ownContainer?: boolean } = {}): Promise<TestApp> {
   let databaseUrl: string;
   let container: StartedPostgreSqlContainer | undefined;
-  let dropDb: (() => Promise<void>) | undefined;
+  let testDb: TestDb | undefined;
 
   if (opts.ownContainer) {
     container = await new PostgreSqlContainer('postgres:16-alpine').start();
@@ -32,39 +65,54 @@ export async function startTestApp(opts: { ownContainer?: boolean } = {}): Promi
     await runMigrations(pool);
     await pool.end();
   } else {
-    const testDb = await createTestDb();
+    testDb = await createTestDb();
     databaseUrl = testDb.url;
-    dropDb = () => testDb.close();
   }
 
+  const clock = new FakeClock();
+  const sms = new ConsoleSmsGateway();
   const moduleRef = await Test.createTestingModule({
-    imports: [
-      AppModule.forRoot({
-        NODE_ENV: 'test',
-        LOG_LEVEL: 'silent',
-        PORT: '0',
-        DATABASE_URL: databaseUrl,
-        S3_ENDPOINT: 'http://localhost:9000',
-        S3_BUCKET: 'test',
-        S3_ACCESS_KEY: 'test',
-        S3_SECRET_KEY: 'test',
-      }),
-    ],
-  }).compile();
+    imports: [AppModule.forRoot({ ...TEST_ENV, DATABASE_URL: databaseUrl })],
+  })
+    .overrideProvider(Clock)
+    .useValue(clock)
+    .overrideProvider(SmsGateway)
+    .useValue(sms)
+    .compile();
   const app = configureApp(moduleRef.createNestApplication());
   await app.listen(0, '127.0.0.1');
   const baseUrl = await app.getUrl();
+
+  const call = async (method: string, path: string, body: unknown, o: RequestOptions = {}) => {
+    const headers: Record<string, string> = {};
+    if (body !== undefined) headers['content-type'] = 'application/json';
+    if (o.token) headers.authorization = `Bearer ${o.token}`;
+    if (o.ip) headers['x-forwarded-for'] = o.ip;
+    const res = await fetch(`${baseUrl}${path}`, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const text = await res.text();
+    return { status: res.status, body: text ? JSON.parse(text) : undefined };
+  };
 
   let closed = false;
   return {
     app,
     baseUrl,
+    clock,
+    sms,
+    db: testDb,
     container,
+    get: (path, o) => call('GET', path, undefined, o),
+    post: (path, body, o) => call('POST', path, body ?? {}, o),
+    delete: (path, o) => call('DELETE', path, undefined, o),
     async close() {
       if (closed) return;
       closed = true;
       await app.close();
-      await dropDb?.();
+      await testDb?.close();
       await container?.stop().catch(() => undefined);
     },
   };

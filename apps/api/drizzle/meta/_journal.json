@@ -15,6 +15,13 @@
       "when": 1792600036891,
       "tag": "0001_append_only_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792601207029,
+      "tag": "0002_auth",
+      "breakpoints": true
     }
   ]
 }

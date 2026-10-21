@@ -10,6 +10,12 @@ export const envSchema = z.object({
   S3_BUCKET: z.string().min(1),
   S3_ACCESS_KEY: z.string().min(1),
   S3_SECRET_KEY: z.string().min(1),
+  /** HS256 key for access tokens (ADR-005). */
+  JWT_SECRET: z.string().min(32),
+  /** HMAC key for OTP codes at rest. */
+  OTP_PEPPER: z.string().min(32),
+  /** Trust X-Forwarded-For (behind a load balancer) for per-IP OTP limits. */
+  TRUST_PROXY: z.stringbool().default(false),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

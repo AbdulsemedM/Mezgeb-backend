@@ -16,8 +16,10 @@ const TABLES = [
   'merchant',
   'merchant_staff',
   'notification',
+  'otp_challenge',
   'payme_request',
   'payment_report',
+  'refresh_token',
   'representative',
 ];
 
@@ -49,7 +51,7 @@ describe('migrations', () => {
     const before = await count();
     await runMigrations(t.pool);
     expect(await count()).toBe(before);
-    expect(before).toBe(2);
+    expect(before).toBe(3);
   });
 
   it('install the append-only triggers', async () => {

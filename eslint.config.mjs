@@ -17,5 +17,10 @@ export default tseslint.config(
       '@typescript-eslint/no-extraneous-class': 'off',
     },
   },
+  {
+    // Integration tests assert on loosely typed JSON responses.
+    files: ['**/test/**/*.ts'],
+    rules: { '@typescript-eslint/no-explicit-any': 'off' },
+  },
   prettier,
 );

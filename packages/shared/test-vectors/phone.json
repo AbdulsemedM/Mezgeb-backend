@@ -1,0 +1,31 @@
+{
+  "description": "normalizeEthiopianPhone(input) -> output (E.164) or null. ADR-005.",
+  "cases": [
+    { "input": "0911234567", "output": "+251911234567" },
+    { "input": "0711234567", "output": "+251711234567" },
+    { "input": "911234567", "output": "+251911234567" },
+    { "input": "711234567", "output": "+251711234567" },
+    { "input": "251911234567", "output": "+251911234567" },
+    { "input": "+251911234567", "output": "+251911234567" },
+    { "input": "00251911234567", "output": "+251911234567" },
+    { "input": "+251 911 234 567", "output": "+251911234567" },
+    { "input": "+251-91-123-4567", "output": "+251911234567" },
+    { "input": "091.123.4567", "output": "+251911234567" },
+    { "input": "+251 (0) 911 234567", "output": "+251911234567" },
+    { "input": "  0911234567  ", "output": "+251911234567" },
+    { "input": "+251711234567", "output": "+251711234567" },
+
+    { "input": "", "output": null },
+    { "input": "0111234567", "output": null },
+    { "input": "+251111234567", "output": null },
+    { "input": "0811234567", "output": null },
+    { "input": "091123456", "output": null },
+    { "input": "09112345678", "output": null },
+    { "input": "+254911234567", "output": null },
+    { "input": "+0911234567", "output": null },
+    { "input": "0044911234567", "output": null },
+    { "input": "09112a4567", "output": null },
+    { "input": "+251 911 234 56", "output": null },
+    { "input": "2519112345678", "output": null }
+  ]
+}

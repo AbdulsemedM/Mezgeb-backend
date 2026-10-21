@@ -635,5 +635,59 @@ export const auditLog = pgTable(
   ],
 );
 
+// ---------------------------------------------------------------------------
+// Auth (ADR-005)
+// ---------------------------------------------------------------------------
+
+/** One OTP sent by SMS. Rows double as the rate-limit log (per phone and per IP). */
+export const otpChallenge = pgTable(
+  'otp_challenge',
+  {
+    id: uuid('id').primaryKey(),
+    /** E.164, normalized. */
+    phone: text('phone').notNull(),
+    /** HMAC-SHA256(OTP_PEPPER, phone:code), hex. */
+    codeHash: char('code_hash', { length: 64 }).notNull(),
+    ip: text('ip').notNull(),
+    /** Language requested at sign-in; used for a new user's profile. */
+    language: language('language'),
+    attempts: integer('attempts').notNull().default(0),
+    expiresAt: ts('expires_at').notNull(),
+    consumedAt: ts('consumed_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('otp_challenge_phone_idx').on(t.phone, t.createdAt),
+    index('otp_challenge_ip_idx').on(t.ip, t.createdAt),
+  ],
+);
+
+/** Rotating refresh tokens, bound to a device, grouped into families for reuse detection. */
+export const refreshToken = pgTable(
+  'refresh_token',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => appUser.id),
+    deviceId: uuid('device_id')
+      .notNull()
+      .references(() => device.id),
+    /** All tokens descended from one login; revoked together on reuse. */
+    familyId: uuid('family_id').notNull(),
+    /** SHA-256 of the token, hex. The token itself is never stored. */
+    tokenHash: char('token_hash', { length: 64 }).notNull().unique(),
+    createdAt: createdAt(),
+    expiresAt: ts('expires_at').notNull(),
+    usedAt: ts('used_at'),
+    revokedAt: ts('revoked_at'),
+    replacedById: uuid('replaced_by_id').references((): AnyPgColumn => refreshToken.id),
+  },
+  (t) => [
+    index('refresh_token_family_idx').on(t.familyId),
+    index('refresh_token_device_idx').on(t.deviceId),
+  ],
+);
+
 /** Tables the append-only trigger protects. Kept here so tests can iterate over them. */
 export const APPEND_ONLY_TABLES = ['entry', 'entry_line', 'audit_log'] as const;

@@ -56,13 +56,28 @@ Node 22, pnpm 10 (no Bun). Docker must be running for integration tests and loca
 - `cp .env.example .env` then `pnpm db:up` / `pnpm db:down` — local Postgres 16 on
   **localhost:55432** (5432/5433 are taken by local installs on the dev machine) and MinIO on
   9000 (console 9001, bucket `mezgeb-dev`).
-- `pnpm --filter @mezgeb/api dev` — API in watch mode on :3000, reads `../../.env`.
+- `pnpm --filter @mezgeb/api dev` — builds `@mezgeb/shared`, then runs the API in watch mode on
+  :3000, reading `../../.env`. The console SMS gateway logs OTP codes there.
 - `pnpm test` — all Vitest suites; API integration tests start their own Postgres via Testcontainers.
 - `pnpm --filter @mezgeb/api exec vitest run test/health.int.test.ts` — a single test file.
 - `pnpm lint`, `pnpm typecheck`, `pnpm format` / `pnpm format:check`, `pnpm build`.
 - TypeScript is pinned to 6.x: typescript-eslint doesn't support TS 7 yet.
 - Prettier ignores `docs/`, `CLAUDE.md` and READMEs; never run it over hand-written docs.
 - Errors: throw `AppError(code, message, status, details?)`; the global filter renders `{ code, message, details? }`.
+
+Backend patterns (M2):
+
+- Every route needs a Bearer access token (global `JwtAuthGuard`) unless marked `@Public()`;
+  `@CurrentAuth()` gives `{ userId, deviceId }`. Auth design: ADR-005.
+- Request bodies: zod schema in `packages/shared/src/schemas/`, applied with
+  `@Body(new ZodValidationPipe(schema))` → 400 `validation_failed`. JSON is snake_case.
+- Time: inject `Clock`, never `new Date()` in services; tests use `FakeClock` (`t.clock.advance(ms)`).
+- Server-generated ids: `uuidv7()` from `@mezgeb/shared`.
+- User-facing text: `t(key, language, params)` from `apps/api/src/i18n/messages.ts`; am/om drafts are
+  marked `TODO(i18n-review)`.
+- Device keys and signatures: `apps/api/src/devices/device-key.ts` (P-256 SPKI, DER signatures).
+- `@mezgeb/shared` types resolve to its `src` (no build needed for typecheck/tests); its runtime
+  `dist` must be built before running the API (`pnpm build` does this in order).
 
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 
@@ -77,8 +92,11 @@ Tests:
 
 - Vitest global setup starts one Postgres container and migrates a template DB once.
   `createTestDb()` (`apps/api/test/setup/db.ts`) clones it per test file; `createTestDb('empty')` is unmigrated.
-- `startTestApp()` (`test/setup/test-app.ts`) boots the API on a random port against a fresh DB;
+- `startTestApp()` (`test/setup/test-app.ts`) boots the API on a random port against a fresh DB,
+  with `t.clock` (FakeClock), `t.sms` (in-memory SMS) and `t.get/post/delete(path, body, { token, ip })`;
   `{ ownContainer: true }` for tests that must stop the database.
+- Auth helpers in `test/setup/auth.ts`: `login(t)` (full OTP sign-in → tokens + device key),
+  `newDevice()`, `refreshBody(device, token)`, `nextIp()` (per-IP limits are real in tests).
 - Fixtures in `test/setup/fixtures.ts`: `seedAccount()`, `purchase()` (a valid entry row to override),
   `pgError()` (unwraps the Postgres error so tests can assert `code` and `constraint`).
 

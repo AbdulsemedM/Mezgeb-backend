@@ -2,7 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    // Runs in Node, browsers (PWA) and is ported to Dart: DOM gives Web Crypto and URL.
+    "lib": ["ES2023", "DOM"],
+    // Node types are for the tests only (reading test vectors); the build excludes them.
+    "types": ["node"]
   },
   "include": ["src"]
 }
