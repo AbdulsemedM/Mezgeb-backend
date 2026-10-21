@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [swc.vite({ module: { type: 'es6' } })],
   test: {
     include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
+    globalSetup: ['test/setup/global-setup.ts'],
     hookTimeout: 120_000,
     testTimeout: 30_000,
   },

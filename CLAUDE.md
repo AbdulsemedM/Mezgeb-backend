@@ -62,8 +62,25 @@ Node 22, pnpm 10 (no Bun). Docker must be running for integration tests and loca
 - `pnpm lint`, `pnpm typecheck`, `pnpm format` / `pnpm format:check`, `pnpm build`.
 - TypeScript is pinned to 6.x: typescript-eslint doesn't support TS 7 yet.
 - Prettier ignores `docs/`, `CLAUDE.md` and READMEs; never run it over hand-written docs.
-- API test helper: `apps/api/test/setup/test-app.ts` (`startTestApp()` → app on a random port + real DB).
 - Errors: throw `AppError(code, message, status, details?)`; the global filter renders `{ code, message, details? }`.
+
+Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
+
+- `pnpm --filter @mezgeb/api db:generate` — after editing the schema, generate the next migration.
+  CI fails if the committed migrations don't match the schema.
+- `pnpm --filter @mezgeb/api exec drizzle-kit generate --custom --name=<name>` — hand-written SQL
+  migration (triggers, functions). `0001_append_only_triggers.sql` blocks UPDATE/DELETE/TRUNCATE on
+  `entry`, `entry_line`, `audit_log` with SQLSTATE `MZ001`.
+- `pnpm build && pnpm --filter @mezgeb/api db:migrate` — apply migrations to `DATABASE_URL`.
+
+Tests:
+
+- Vitest global setup starts one Postgres container and migrates a template DB once.
+  `createTestDb()` (`apps/api/test/setup/db.ts`) clones it per test file; `createTestDb('empty')` is unmigrated.
+- `startTestApp()` (`test/setup/test-app.ts`) boots the API on a random port against a fresh DB;
+  `{ ownContainer: true }` for tests that must stop the database.
+- Fixtures in `test/setup/fixtures.ts`: `seedAccount()`, `purchase()` (a valid entry row to override),
+  `pgError()` (unwraps the Postgres error so tests can assert `code` and `constraint`).
 
 ## How to work in this repo
 

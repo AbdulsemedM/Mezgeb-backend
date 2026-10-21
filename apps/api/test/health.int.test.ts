@@ -5,7 +5,8 @@ describe('GET /v1/health', () => {
   let t: TestApp;
 
   beforeAll(async () => {
-    t = await startTestApp();
+    // Own container: the last test stops the database.
+    t = await startTestApp({ ownContainer: true });
   });
 
   afterAll(async () => {
@@ -26,7 +27,7 @@ describe('GET /v1/health', () => {
 
   // Runs last: it stops the database.
   it('returns 503 db_unavailable when the database is down', async () => {
-    await t.pg.stop();
+    await t.container!.stop();
     const res = await fetch(`${t.baseUrl}/v1/health`);
     expect(res.status).toBe(503);
     expect(await res.json()).toEqual({

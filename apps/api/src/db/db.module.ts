@@ -3,11 +3,12 @@ import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { AppConfig } from '../config/env.schema.js';
+import * as schema from './schema.js';
 
 export const PG_POOL = Symbol('PG_POOL');
 export const DB = Symbol('DB');
 
-export type Db = NodePgDatabase;
+export type Db = NodePgDatabase<typeof schema>;
 
 @Global()
 @Module({
@@ -29,7 +30,7 @@ export type Db = NodePgDatabase;
     {
       provide: DB,
       inject: [PG_POOL],
-      useFactory: (pool: pg.Pool): Db => drizzle(pool),
+      useFactory: (pool: pg.Pool): Db => drizzle(pool, { schema }),
     },
   ],
   exports: [PG_POOL, DB],

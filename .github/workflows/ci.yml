@@ -19,5 +19,10 @@ jobs:
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
+      - name: Migrations match the Drizzle schema
+        run: |
+          pnpm --filter @mezgeb/api db:generate
+          git diff --exit-code -- apps/api/drizzle
+          test -z "$(git status --porcelain -- apps/api/drizzle)"
       # Integration tests start Postgres via Testcontainers using the runner's Docker.
       - run: pnpm test
