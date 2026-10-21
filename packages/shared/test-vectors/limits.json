@@ -1,0 +1,471 @@
+{
+  "description": "Limits engine (spec 'Limits engine rules', ADR-003, ADR-007). evaluateLimits(input) must match `expected` for every field listed there. Amounts in santim; local dates in Africa/Addis_Ababa (UTC+3).",
+  "evaluate": [
+    {
+      "name": "spec worked example: 5,000 monthly vs 4,000 two-weekly, maid 1,500 — maid goes over",
+      "input": {
+        "merchant": {
+          "value": 500000,
+          "period": { "type": "monthly", "calendar": "gregorian" },
+          "mode": "alert"
+        },
+        "customer": { "value": 400000, "period": { "type": "biweekly" }, "mode": "alert" },
+        "representative": { "value": 150000, "spentInPeriod": 120000 },
+        "openBalance": 300000,
+        "periodStart": "2026-10-05",
+        "amount": 50000,
+        "now": "2026-10-10T09:00:00.000Z"
+      },
+      "expected": {
+        "status": "block100",
+        "value": {
+          "status": "warn80",
+          "effective_limit": 400000,
+          "projected_balance": 350000,
+          "crossed": ["80"]
+        },
+        "representative": {
+          "status": "block100",
+          "limit": 150000,
+          "projected_spend": 170000,
+          "crossed": ["100"]
+        },
+        "time": {
+          "state": "running",
+          "due_date": "2026-10-19",
+          "merchant_due_date": "2026-11-05",
+          "customer_due_date": "2026-10-19",
+          "period_start": "2026-10-05"
+        },
+        "flags": ["rep_over_limit"]
+      }
+    },
+    {
+      "name": "spec worked example — maid within her limit, both reach 80%",
+      "input": {
+        "merchant": {
+          "value": 500000,
+          "period": { "type": "monthly", "calendar": "gregorian" },
+          "mode": "alert"
+        },
+        "customer": { "value": 400000, "period": { "type": "biweekly" }, "mode": "alert" },
+        "representative": { "value": 150000, "spentInPeriod": 100000 },
+        "openBalance": 300000,
+        "periodStart": "2026-10-05",
+        "amount": 20000,
+        "now": "2026-10-10T09:00:00.000Z"
+      },
+      "expected": {
+        "status": "warn80",
+        "value": {
+          "status": "warn80",
+          "effective_limit": 400000,
+          "projected_balance": 320000,
+          "crossed": ["80"]
+        },
+        "representative": { "status": "warn80", "projected_spend": 120000, "crossed": ["80"] },
+        "flags": []
+      }
+    },
+    {
+      "name": "below 80%",
+      "input": {
+        "merchant": null,
+        "customer": { "value": 400000, "period": null, "mode": "alert" },
+        "openBalance": 100000,
+        "periodStart": "2026-10-05",
+        "amount": 50000,
+        "now": "2026-10-10T09:00:00.000Z"
+      },
+      "expected": {
+        "status": "ok",
+        "value": {
+          "status": "ok",
+          "effective_limit": 400000,
+          "projected_balance": 150000,
+          "crossed": []
+        },
+        "representative": null,
+        "time": { "state": "none", "due_date": null },
+        "flags": []
+      }
+    },
+    {
+      "name": "exactly at the limit is allowed and crosses 80 and 100",
+      "input": {
+        "merchant": null,
+        "customer": { "value": 100000, "period": null, "mode": "alert" },
+        "openBalance": 60000,
+        "periodStart": "2026-10-05",
+        "amount": 40000,
+        "now": "2026-10-10T09:00:00.000Z"
+      },
+      "expected": {
+        "status": "warn80",
+        "value": { "status": "warn80", "projected_balance": 100000, "crossed": ["80", "100"] },
+        "flags": []
+      }
+    },
+    {
+      "name": "exceeding an alert limit blocks with override",
+      "input": {
+        "merchant": null,
+        "customer": { "value": 100000, "period": null, "mode": "alert" },
+        "openBalance": 60000,
+        "periodStart": "2026-10-05",
+        "amount": 50000,
+        "now": "2026-10-10T09:00:00.000Z"
+      },
+      "expected": {
+        "status": "block100",
+        "value": { "status": "block100", "projected_balance": 110000, "crossed": ["80", "100"] },
+        "flags": ["over_limit"]
+      }
+    },
+    {
+      "name": "customer hard stop exceeded",
+      "input": {
+        "merchant": null,
+        "customer": { "value": 100000, "period": null, "mode": "hard_stop" },
+        "openBalance": 90000,
+        "periodStart": "2026-10-05",
+        "amount": 20000,
+        "now": "2026-10-10T09:00:00.000Z"
+      },
+      "expected": {
+        "status": "hard_stop",
+        "value": {
+          "status": "hard_stop",
+          "effective_limit": 100000,
+          "projected_balance": 110000,
+          "crossed": ["100"]
+        },
+        "flags": ["over_limit", "over_hard_stop"]
+      }
+    },
+    {
+      "name": "customer hard stop reached exactly",
+      "input": {
+        "merchant": null,
+        "customer": { "value": 100000, "period": null, "mode": "hard_stop" },
+        "openBalance": 90000,
+        "periodStart": "2026-10-05",
+        "amount": 10000,
+        "now": "2026-10-10T09:00:00.000Z"
+      },
+      "expected": { "status": "warn80", "value": { "crossed": ["100"] }, "flags": [] }
+    },
+    {
+      "name": "merchant limit lower than customer hard stop: block, not hard stop",
+      "input": {
+        "merchant": { "value": 50000, "period": null, "mode": "alert" },
+        "customer": { "value": 80000, "period": null, "mode": "hard_stop" },
+        "openBalance": 40000,
+        "periodStart": "2026-10-05",
+        "amount": 20000,
+        "now": "2026-10-10T09:00:00.000Z"
+      },
+      "expected": {
+        "status": "block100",
+        "value": {
+          "status": "block100",
+          "effective_limit": 50000,
+          "projected_balance": 60000,
+          "crossed": ["100"]
+        },
+        "flags": ["over_limit"]
+      }
+    },
+    {
+      "name": "both limits exceeded: hard stop wins",
+      "input": {
+        "merchant": { "value": 50000, "period": null, "mode": "alert" },
+        "customer": { "value": 80000, "period": null, "mode": "hard_stop" },
+        "openBalance": 40000,
+        "periodStart": "2026-10-05",
+        "amount": 50000,
+        "now": "2026-10-10T09:00:00.000Z"
+      },
+      "expected": { "status": "hard_stop", "flags": ["over_limit", "over_hard_stop"] }
+    },
+    {
+      "name": "one-time raise lifts the hard stop for this purchase",
+      "input": {
+        "merchant": null,
+        "customer": { "value": 100000, "period": null, "mode": "hard_stop" },
+        "openBalance": 90000,
+        "periodStart": "2026-10-05",
+        "amount": 20000,
+        "now": "2026-10-10T09:00:00.000Z",
+        "oneTimeRaise": 20000
+      },
+      "expected": {
+        "status": "warn80",
+        "value": {
+          "status": "warn80",
+          "effective_limit": 120000,
+          "projected_balance": 110000,
+          "crossed": ["80"]
+        },
+        "flags": []
+      }
+    },
+    {
+      "name": "lowered limit below the balance blocks the next purchase; no new crossing",
+      "input": {
+        "merchant": null,
+        "customer": { "value": 50000, "period": null, "mode": "alert" },
+        "openBalance": 70000,
+        "periodStart": "2026-10-05",
+        "amount": 1000,
+        "now": "2026-10-10T09:00:00.000Z"
+      },
+      "expected": { "status": "block100", "value": { "crossed": [] }, "flags": ["over_limit"] }
+    },
+    {
+      "name": "no limits at all",
+      "input": {
+        "merchant": null,
+        "customer": null,
+        "openBalance": 0,
+        "periodStart": null,
+        "amount": 1000,
+        "now": "2026-10-10T09:00:00.000Z"
+      },
+      "expected": {
+        "status": "ok",
+        "value": {
+          "status": "ok",
+          "effective_limit": null,
+          "projected_balance": 1000,
+          "crossed": []
+        },
+        "time": { "state": "none", "due_date": null, "period_start": "2026-10-10" },
+        "flags": []
+      }
+    },
+    {
+      "name": "first purchase starts the period today, in Addis time (22:30 UTC is the next day)",
+      "input": {
+        "merchant": null,
+        "customer": { "value": null, "period": { "type": "weekly" }, "mode": "alert" },
+        "openBalance": 0,
+        "periodStart": null,
+        "amount": 1000,
+        "now": "2026-10-10T22:30:00.000Z"
+      },
+      "expected": {
+        "time": { "state": "running", "period_start": "2026-10-11", "due_date": "2026-10-18" }
+      }
+    },
+    {
+      "name": "Pagume start: due Meskerem 30, due_soon 3 days before (local midnight)",
+      "input": {
+        "merchant": null,
+        "customer": {
+          "value": null,
+          "period": { "type": "monthly", "calendar": "ethiopian" },
+          "mode": "alert"
+        },
+        "openBalance": 5000,
+        "periodStart": "2026-09-08",
+        "amount": 0,
+        "now": "2026-10-06T21:00:00.000Z"
+      },
+      "expected": { "time": { "state": "due_soon", "due_date": "2026-10-10" } }
+    },
+    {
+      "name": "Pagume start: one millisecond earlier is still running",
+      "input": {
+        "merchant": null,
+        "customer": {
+          "value": null,
+          "period": { "type": "monthly", "calendar": "ethiopian" },
+          "mode": "alert"
+        },
+        "openBalance": 5000,
+        "periodStart": "2026-09-08",
+        "amount": 0,
+        "now": "2026-10-06T20:59:59.999Z"
+      },
+      "expected": { "time": { "state": "running", "due_date": "2026-10-10" } }
+    },
+    {
+      "name": "Nehase 10 start is due Meskerem 10",
+      "input": {
+        "merchant": {
+          "value": null,
+          "period": { "type": "monthly", "calendar": "ethiopian" },
+          "mode": "alert"
+        },
+        "customer": null,
+        "openBalance": 5000,
+        "periodStart": "2026-08-16",
+        "amount": 0,
+        "now": "2026-09-19T21:00:00.000Z"
+      },
+      "expected": {
+        "time": { "state": "due", "due_date": "2026-09-20", "merchant_due_date": "2026-09-20" }
+      }
+    },
+    {
+      "name": "due date reached, not yet overdue",
+      "input": {
+        "merchant": null,
+        "customer": { "value": null, "period": { "type": "weekly" }, "mode": "alert" },
+        "openBalance": 5000,
+        "periodStart": "2026-10-01",
+        "amount": 0,
+        "now": "2026-10-14T09:00:00.000Z"
+      },
+      "expected": { "time": { "state": "due", "due_date": "2026-10-08" } }
+    },
+    {
+      "name": "overdue 7 days after the due date",
+      "input": {
+        "merchant": null,
+        "customer": { "value": null, "period": { "type": "weekly" }, "mode": "alert" },
+        "openBalance": 5000,
+        "periodStart": "2026-10-01",
+        "amount": 0,
+        "now": "2026-10-14T21:00:00.000Z"
+      },
+      "expected": { "time": { "state": "overdue", "due_date": "2026-10-08" } }
+    },
+    {
+      "name": "effective due date is the earlier of the two",
+      "input": {
+        "merchant": { "value": null, "period": { "type": "weekly" }, "mode": "alert" },
+        "customer": {
+          "value": null,
+          "period": { "type": "monthly", "calendar": "gregorian" },
+          "mode": "alert"
+        },
+        "openBalance": 5000,
+        "periodStart": "2026-10-05",
+        "amount": 0,
+        "now": "2026-10-06T09:00:00.000Z"
+      },
+      "expected": {
+        "time": {
+          "state": "running",
+          "due_date": "2026-10-12",
+          "merchant_due_date": "2026-10-12",
+          "customer_due_date": "2026-11-05"
+        }
+      }
+    },
+    {
+      "name": "nothing owed: no period, no due date",
+      "input": {
+        "merchant": null,
+        "customer": { "value": 100000, "period": { "type": "weekly" }, "mode": "alert" },
+        "openBalance": 0,
+        "periodStart": null,
+        "amount": 0,
+        "now": "2026-10-06T09:00:00.000Z"
+      },
+      "expected": {
+        "status": "ok",
+        "time": { "state": "none", "due_date": null, "period_start": null }
+      }
+    },
+    {
+      "name": "representative without an own limit",
+      "input": {
+        "merchant": null,
+        "customer": null,
+        "representative": { "value": null, "spentInPeriod": 5000 },
+        "openBalance": 0,
+        "periodStart": null,
+        "amount": 1000,
+        "now": "2026-10-06T09:00:00.000Z"
+      },
+      "expected": { "status": "ok", "representative": null }
+    }
+  ],
+  "ledger_state": [
+    {
+      "name": "two purchases: period starts at the first",
+      "entries": [
+        { "seq": 1, "type": "purchase", "amount": 100, "recorded_at": "2026-10-01T08:00:00.000Z" },
+        { "seq": 2, "type": "purchase", "amount": 200, "recorded_at": "2026-10-03T08:00:00.000Z" }
+      ],
+      "balance": 300,
+      "periodStart": "2026-10-01"
+    },
+    {
+      "name": "partial payment does not restart the period",
+      "entries": [
+        { "seq": 1, "type": "purchase", "amount": 100, "recorded_at": "2026-10-01T08:00:00.000Z" },
+        { "seq": 2, "type": "payment", "amount": 50, "recorded_at": "2026-10-02T08:00:00.000Z" },
+        { "seq": 3, "type": "purchase", "amount": 30, "recorded_at": "2026-10-03T08:00:00.000Z" }
+      ],
+      "balance": 80,
+      "periodStart": "2026-10-01"
+    },
+    {
+      "name": "full clearance restarts the period at the next purchase",
+      "entries": [
+        { "seq": 1, "type": "purchase", "amount": 100, "recorded_at": "2026-10-01T08:00:00.000Z" },
+        { "seq": 2, "type": "payment", "amount": 100, "recorded_at": "2026-10-02T08:00:00.000Z" },
+        { "seq": 3, "type": "purchase", "amount": 40, "recorded_at": "2026-10-05T08:00:00.000Z" }
+      ],
+      "balance": 40,
+      "periodStart": "2026-10-05"
+    },
+    {
+      "name": "a correction that clears the balance ends the period",
+      "entries": [
+        { "seq": 1, "type": "purchase", "amount": 100, "recorded_at": "2026-10-01T08:00:00.000Z" },
+        {
+          "seq": 2,
+          "type": "correction",
+          "amount": -100,
+          "recorded_at": "2026-10-01T09:00:00.000Z"
+        }
+      ],
+      "balance": 0,
+      "periodStart": null
+    },
+    {
+      "name": "overpayment leaves a credit; the period starts when the balance turns positive",
+      "entries": [
+        { "seq": 1, "type": "purchase", "amount": 100, "recorded_at": "2026-10-01T08:00:00.000Z" },
+        { "seq": 2, "type": "payment", "amount": 150, "recorded_at": "2026-10-02T08:00:00.000Z" },
+        { "seq": 3, "type": "purchase", "amount": 30, "recorded_at": "2026-10-03T08:00:00.000Z" },
+        { "seq": 4, "type": "purchase", "amount": 40, "recorded_at": "2026-10-04T08:00:00.000Z" }
+      ],
+      "balance": 20,
+      "periodStart": "2026-10-04"
+    },
+    {
+      "name": "uses seq order, not input order",
+      "entries": [
+        { "seq": 3, "type": "purchase", "amount": 40, "recorded_at": "2026-10-05T08:00:00.000Z" },
+        { "seq": 1, "type": "purchase", "amount": 100, "recorded_at": "2026-10-01T08:00:00.000Z" },
+        { "seq": 2, "type": "payment", "amount": 100, "recorded_at": "2026-10-02T08:00:00.000Z" }
+      ],
+      "balance": 40,
+      "periodStart": "2026-10-05"
+    },
+    {
+      "name": "period start is the Addis local date",
+      "entries": [
+        { "seq": 1, "type": "purchase", "amount": 100, "recorded_at": "2026-10-01T21:30:00.000Z" }
+      ],
+      "balance": 100,
+      "periodStart": "2026-10-02"
+    },
+    {
+      "name": "a positive correction from zero opens a period",
+      "entries": [
+        { "seq": 1, "type": "purchase", "amount": 100, "recorded_at": "2026-10-01T08:00:00.000Z" },
+        { "seq": 2, "type": "payment", "amount": 100, "recorded_at": "2026-10-02T08:00:00.000Z" },
+        { "seq": 3, "type": "correction", "amount": 50, "recorded_at": "2026-10-03T08:00:00.000Z" }
+      ],
+      "balance": 50,
+      "periodStart": "2026-10-03"
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "description": "Ethiopian <-> Gregorian (ADR-003) and Addis Ababa local dates (ADR-007). Ethiopian leap year: year % 4 == 3 (Pagume has 6 days).",
+  "conversions": [
+    {
+      "ethiopian": [2016, 1, 1],
+      "gregorian": "2023-09-12",
+      "note": "Enkutatash after leap year 2015"
+    },
+    { "ethiopian": [2015, 13, 6], "gregorian": "2023-09-11", "note": "Pagume 6 in leap year 2015" },
+    { "ethiopian": [2017, 1, 1], "gregorian": "2024-09-11" },
+    { "ethiopian": [2018, 1, 1], "gregorian": "2025-09-11" },
+    {
+      "ethiopian": [2018, 13, 5],
+      "gregorian": "2026-09-10",
+      "note": "last day of 2018 (not leap)"
+    },
+    { "ethiopian": [2019, 1, 1], "gregorian": "2026-09-11" },
+    { "ethiopian": [2019, 13, 6], "gregorian": "2027-09-11", "note": "Pagume 6 in leap year 2019" },
+    { "ethiopian": [2020, 1, 1], "gregorian": "2027-09-12" },
+    { "ethiopian": [2018, 12, 10], "gregorian": "2026-08-16", "note": "Nehase 10" },
+    { "ethiopian": [2018, 13, 3], "gregorian": "2026-09-08", "note": "Pagume 3" },
+    { "ethiopian": [2019, 1, 30], "gregorian": "2026-10-10", "note": "Meskerem 30" },
+    {
+      "ethiopian": [2017, 6, 23],
+      "gregorian": "2025-03-02",
+      "note": "Yekatit 23, Adwa Victory Day"
+    },
+    {
+      "ethiopian": [2012, 4, 29],
+      "gregorian": "2020-01-08",
+      "note": "Tahsas 29 in the year after leap year 2011 falls on Jan 8"
+    },
+    {
+      "ethiopian": [2013, 4, 29],
+      "gregorian": "2021-01-07",
+      "note": "Tahsas 29 in an ordinary year falls on Jan 7"
+    }
+  ],
+  "invalid_ethiopian": [
+    [2018, 13, 6],
+    [2018, 14, 1],
+    [2018, 1, 31],
+    [2018, 0, 1],
+    [2018, 1, 0]
+  ],
+  "local_date": [
+    { "instant": "2026-10-10T20:59:59.999Z", "local": "2026-10-10" },
+    { "instant": "2026-10-10T21:00:00.000Z", "local": "2026-10-11", "note": "midnight in Addis" },
+    { "instant": "2026-12-31T22:30:00.000Z", "local": "2027-01-01" }
+  ],
+  "start_of_local_day": [{ "local": "2026-10-11", "instant": "2026-10-10T21:00:00.000Z" }],
+  "add_period": [
+    { "start": "2026-10-01", "period": { "type": "weekly" }, "due": "2026-10-08" },
+    { "start": "2026-10-05", "period": { "type": "biweekly" }, "due": "2026-10-19" },
+    { "start": "2026-10-01", "period": { "type": "custom_days", "days": 10 }, "due": "2026-10-11" },
+    {
+      "start": "2026-10-05",
+      "period": { "type": "monthly", "calendar": "gregorian" },
+      "due": "2026-11-05"
+    },
+    {
+      "start": "2027-01-31",
+      "period": { "type": "monthly", "calendar": "gregorian" },
+      "due": "2027-02-28"
+    },
+    {
+      "start": "2028-01-31",
+      "period": { "type": "monthly", "calendar": "gregorian" },
+      "due": "2028-02-29"
+    },
+    {
+      "start": "2026-12-15",
+      "period": { "type": "monthly", "calendar": "gregorian" },
+      "due": "2027-01-15"
+    },
+    {
+      "start": "2026-08-16",
+      "period": { "type": "monthly", "calendar": "ethiopian" },
+      "due": "2026-09-20",
+      "note": "Nehase 10 -> Meskerem 10, Pagume included"
+    },
+    {
+      "start": "2026-09-08",
+      "period": { "type": "monthly", "calendar": "ethiopian" },
+      "due": "2026-10-10",
+      "note": "Pagume 3 counts as Nehase 30 -> Meskerem 30"
+    },
+    {
+      "start": "2026-09-20",
+      "period": { "type": "monthly", "calendar": "ethiopian" },
+      "due": "2026-10-20",
+      "note": "Meskerem 10 -> Tikimt 10"
+    }
+  ],
+  "rolling_window": [
+    {
+      "anchor": "2026-01-10",
+      "period": { "type": "monthly", "calendar": "gregorian" },
+      "today": "2026-10-09",
+      "start": "2026-09-10",
+      "end": "2026-10-10"
+    },
+    {
+      "anchor": "2026-01-10",
+      "period": { "type": "monthly", "calendar": "gregorian" },
+      "today": "2026-10-10",
+      "start": "2026-10-10",
+      "end": "2026-11-10"
+    },
+    {
+      "anchor": "2026-01-31",
+      "period": { "type": "monthly", "calendar": "gregorian" },
+      "today": "2026-03-01",
+      "start": "2026-02-28",
+      "end": "2026-03-31"
+    },
+    {
+      "anchor": "2026-10-01",
+      "period": { "type": "custom_days", "days": 10 },
+      "today": "2026-10-25",
+      "start": "2026-10-21",
+      "end": "2026-10-31"
+    },
+    {
+      "anchor": "2026-10-01",
+      "period": { "type": "weekly" },
+      "today": "2026-10-01",
+      "start": "2026-10-01",
+      "end": "2026-10-08"
+    },
+    {
+      "anchor": "2026-10-15",
+      "period": { "type": "weekly" },
+      "today": "2026-10-01",
+      "start": "2026-10-15",
+      "end": "2026-10-22",
+      "note": "before the anchor"
+    }
+  ]
+}

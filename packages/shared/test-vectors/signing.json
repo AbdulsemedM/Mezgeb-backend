@@ -1,0 +1,139 @@
+{
+  "description": "ADR-001 chain: payload -> JCS canonical (UTF-8) -> ECDSA P-256/SHA-256 DER signature by test_key -> payload_hash = sha256(canonical) -> hash = sha256(JCS(link)). Cases form one chain (prev_hash links). ECDSA is randomized: verify device_sig, do not compare it byte-for-byte with a fresh signature. Regenerate with scripts/gen-signing-vectors.mjs.",
+  "test_key": {
+    "warning": "TEST KEY ONLY. Never use outside tests.",
+    "public_spki_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE9AJSo/Oa902oAcDGaYaJNSt84HSOVcB/THsK3WF7IMSRShPew85i7NEv4OWQ31h5k2hAMyVxcFOPo6X+dfkK5Q==",
+    "private_pkcs8_b64": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgPELPY/FGHfVNuVrgQUkM7yD3XEJ7k+zH7XFjS2GoVlGhRANCAAT0AlKj85r3TagBwMZphok1K3zgdI5VwH9MewrdYXsgxJFKE97DzmLs0S/g5ZDfWHmTaEAzJXFwU4+jpf51+Qrl"
+  },
+  "genesis_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "cases": [
+    {
+      "name": "genesis: detailed purchase taken by the customer",
+      "payload": {
+        "id": "01a15f64-0000-7000-8000-00000000e001",
+        "account_id": "01a15f64-0000-7000-8000-00000000a001",
+        "type": "purchase",
+        "amount": 12500,
+        "lines": [
+          {
+            "name": "Eggs",
+            "qty": "6",
+            "unit": "pc",
+            "unit_price": 1500,
+            "amount": 9000,
+            "item_id": null,
+            "source": "photo"
+          },
+          {
+            "name": "Sugar",
+            "qty": "1.5",
+            "unit": "kg",
+            "unit_price": 2000,
+            "amount": 3000,
+            "item_id": "01a15f64-0000-7000-8000-00000000c001",
+            "source": "manual"
+          },
+          {
+            "name": "Bread",
+            "qty": null,
+            "unit": null,
+            "unit_price": null,
+            "amount": 500,
+            "item_id": null,
+            "source": "manual"
+          }
+        ],
+        "taken_by_type": "customer",
+        "representative_id": null,
+        "order_id": null,
+        "ref_entry_id": null,
+        "reason": null,
+        "device_id": "01a15f64-0000-7000-8000-00000000d001",
+        "device_seq": 1,
+        "recorded_at": "2026-10-21T07:59:58.000Z"
+      },
+      "canonical": "{\"account_id\":\"01a15f64-0000-7000-8000-00000000a001\",\"amount\":12500,\"device_id\":\"01a15f64-0000-7000-8000-00000000d001\",\"device_seq\":1,\"id\":\"01a15f64-0000-7000-8000-00000000e001\",\"lines\":[{\"amount\":9000,\"item_id\":null,\"name\":\"Eggs\",\"qty\":\"6\",\"source\":\"photo\",\"unit\":\"pc\",\"unit_price\":1500},{\"amount\":3000,\"item_id\":\"01a15f64-0000-7000-8000-00000000c001\",\"name\":\"Sugar\",\"qty\":\"1.5\",\"source\":\"manual\",\"unit\":\"kg\",\"unit_price\":2000},{\"amount\":500,\"item_id\":null,\"name\":\"Bread\",\"qty\":null,\"source\":\"manual\",\"unit\":null,\"unit_price\":null}],\"order_id\":null,\"reason\":null,\"recorded_at\":\"2026-10-21T07:59:58.000Z\",\"ref_entry_id\":null,\"representative_id\":null,\"taken_by_type\":\"customer\",\"type\":\"purchase\"}",
+      "device_sig": "MEUCICwF7FkWqwsYUzhdpjLfp7M2pUlh3BDTCsXRm6f1DfapAiEAr7oOf2CwzxvFhftGytFHqgTF5ohUXjjD3jHLQRzDMfc=",
+      "payload_hash": "bb766d6829160d5e5090fb049b2ab444959221bdb5d7e82f549337b20f5abf55",
+      "link": {
+        "seq": 1,
+        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "payload_hash": "bb766d6829160d5e5090fb049b2ab444959221bdb5d7e82f549337b20f5abf55",
+        "device_sig": "MEUCICwF7FkWqwsYUzhdpjLfp7M2pUlh3BDTCsXRm6f1DfapAiEAr7oOf2CwzxvFhftGytFHqgTF5ohUXjjD3jHLQRzDMfc=",
+        "received_at": "2026-10-21T08:00:01.250Z"
+      },
+      "link_canonical": "{\"device_sig\":\"MEUCICwF7FkWqwsYUzhdpjLfp7M2pUlh3BDTCsXRm6f1DfapAiEAr7oOf2CwzxvFhftGytFHqgTF5ohUXjjD3jHLQRzDMfc=\",\"payload_hash\":\"bb766d6829160d5e5090fb049b2ab444959221bdb5d7e82f549337b20f5abf55\",\"prev_hash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"received_at\":\"2026-10-21T08:00:01.250Z\",\"seq\":1}",
+      "hash": "044f8a0c9039d018d03e6380e2345e2f6272559652a98ecfd7fc23419b8f4c8b"
+    },
+    {
+      "name": "correction with a negative amount and an Amharic reason",
+      "payload": {
+        "id": "01a15f64-0000-7000-8000-00000000e002",
+        "account_id": "01a15f64-0000-7000-8000-00000000a001",
+        "type": "correction",
+        "amount": -500,
+        "lines": [
+          {
+            "name": "Bread",
+            "qty": null,
+            "unit": null,
+            "unit_price": null,
+            "amount": -500,
+            "item_id": null,
+            "source": "manual"
+          }
+        ],
+        "taken_by_type": null,
+        "representative_id": null,
+        "order_id": null,
+        "ref_entry_id": "01a15f64-0000-7000-8000-00000000e001",
+        "reason": "ዳቦ ተመልሷል (bread returned)",
+        "device_id": "01a15f64-0000-7000-8000-00000000d001",
+        "device_seq": 2,
+        "recorded_at": "2026-10-21T09:29:55.123Z"
+      },
+      "canonical": "{\"account_id\":\"01a15f64-0000-7000-8000-00000000a001\",\"amount\":-500,\"device_id\":\"01a15f64-0000-7000-8000-00000000d001\",\"device_seq\":2,\"id\":\"01a15f64-0000-7000-8000-00000000e002\",\"lines\":[{\"amount\":-500,\"item_id\":null,\"name\":\"Bread\",\"qty\":null,\"source\":\"manual\",\"unit\":null,\"unit_price\":null}],\"order_id\":null,\"reason\":\"ዳቦ ተመልሷል (bread returned)\",\"recorded_at\":\"2026-10-21T09:29:55.123Z\",\"ref_entry_id\":\"01a15f64-0000-7000-8000-00000000e001\",\"representative_id\":null,\"taken_by_type\":null,\"type\":\"correction\"}",
+      "device_sig": "MEUCIQDHvw2cmcPKYYyDF54j1R0nXMhEKp+Xr3M3W7j1zCBdNAIgSOR4GfjJRjevwOs/pqkrsos5G4n40JIUbgqqQUjhDJI=",
+      "payload_hash": "4af0d9971668aa80035a02843e64f00e89874701870f41ca8ea828b1f9055613",
+      "link": {
+        "seq": 2,
+        "prev_hash": "044f8a0c9039d018d03e6380e2345e2f6272559652a98ecfd7fc23419b8f4c8b",
+        "payload_hash": "4af0d9971668aa80035a02843e64f00e89874701870f41ca8ea828b1f9055613",
+        "device_sig": "MEUCIQDHvw2cmcPKYYyDF54j1R0nXMhEKp+Xr3M3W7j1zCBdNAIgSOR4GfjJRjevwOs/pqkrsos5G4n40JIUbgqqQUjhDJI=",
+        "received_at": "2026-10-21T09:30:00.000Z"
+      },
+      "link_canonical": "{\"device_sig\":\"MEUCIQDHvw2cmcPKYYyDF54j1R0nXMhEKp+Xr3M3W7j1zCBdNAIgSOR4GfjJRjevwOs/pqkrsos5G4n40JIUbgqqQUjhDJI=\",\"payload_hash\":\"4af0d9971668aa80035a02843e64f00e89874701870f41ca8ea828b1f9055613\",\"prev_hash\":\"044f8a0c9039d018d03e6380e2345e2f6272559652a98ecfd7fc23419b8f4c8b\",\"received_at\":\"2026-10-21T09:30:00.000Z\",\"seq\":2}",
+      "hash": "0479fa7ac06ec87f35c159fe6fcadc0adf53d8cfd1d0aa715270e2b98127ed37"
+    },
+    {
+      "name": "server-origin payment (payment confirmation): no device, no signature",
+      "payload": {
+        "id": "01a15f64-0000-7000-8000-00000000e003",
+        "account_id": "01a15f64-0000-7000-8000-00000000a001",
+        "type": "payment",
+        "amount": 10000,
+        "lines": [],
+        "taken_by_type": null,
+        "representative_id": null,
+        "order_id": null,
+        "ref_entry_id": null,
+        "reason": null,
+        "device_id": null,
+        "device_seq": null,
+        "recorded_at": "2026-10-22T10:00:00.000Z"
+      },
+      "canonical": "{\"account_id\":\"01a15f64-0000-7000-8000-00000000a001\",\"amount\":10000,\"device_id\":null,\"device_seq\":null,\"id\":\"01a15f64-0000-7000-8000-00000000e003\",\"lines\":[],\"order_id\":null,\"reason\":null,\"recorded_at\":\"2026-10-22T10:00:00.000Z\",\"ref_entry_id\":null,\"representative_id\":null,\"taken_by_type\":null,\"type\":\"payment\"}",
+      "device_sig": null,
+      "payload_hash": "4278f8f96dc0828227d27a5de574e733fc5ebd2056c1e421a32badf1ce3fb83d",
+      "link": {
+        "seq": 3,
+        "prev_hash": "0479fa7ac06ec87f35c159fe6fcadc0adf53d8cfd1d0aa715270e2b98127ed37",
+        "payload_hash": "4278f8f96dc0828227d27a5de574e733fc5ebd2056c1e421a32badf1ce3fb83d",
+        "device_sig": null,
+        "received_at": "2026-10-22T10:00:00.000Z"
+      },
+      "link_canonical": "{\"device_sig\":null,\"payload_hash\":\"4278f8f96dc0828227d27a5de574e733fc5ebd2056c1e421a32badf1ce3fb83d\",\"prev_hash\":\"0479fa7ac06ec87f35c159fe6fcadc0adf53d8cfd1d0aa715270e2b98127ed37\",\"received_at\":\"2026-10-22T10:00:00.000Z\",\"seq\":3}",
+      "hash": "e1dad66c539d4f90fdab7c7618bb33d1cd909dfb3ada914ea3bc86fe3142200b"
+    }
+  ]
+}

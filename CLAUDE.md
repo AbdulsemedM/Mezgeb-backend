@@ -95,6 +95,17 @@ Backend patterns (M3):
 - Test helpers in `test/setup/shop.ts`: `createShop(t)`, `addStaff(t, shop)`, `invite(t, shop)`,
   `acceptInvite(t, invited)`. Mind the 15-minute access token when a test advances the clock.
 
+Shared core (M4, `packages/shared`; ADR-007):
+
+- `money.ts` (parseBirr, formatBirr, lineAmount, normalizeQty), `jcs.ts` (RFC 8785), `hash.ts`
+  (async sha256Hex via Web Crypto), `signing.ts` (ADR-001 payload, payloadHash, entryHash),
+  `calendar/` (Ethiopian ↔ Gregorian, Addis local dates as `YYYY-MM-DD`), `limits/` (addPeriod,
+  rollingWindow, ledgerState, evaluateLimits).
+- Shared source must run in browsers and Node: no `node:*` imports outside tests and
+  `src/test-vectors.ts`; no DOM-only types (the API compiles this source without lib DOM).
+- Every behaviour has JSON cases in `packages/shared/test-vectors/` for the Dart port. Add a case
+  there, not only in a TS test. `signing.json` is generated: `node packages/shared/scripts/gen-signing-vectors.mjs`.
+
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 
 - `pnpm --filter @mezgeb/api db:generate` — after editing the schema, generate the next migration.
