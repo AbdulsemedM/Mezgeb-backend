@@ -708,5 +708,36 @@ export const refreshToken = pgTable(
   ],
 );
 
+// ---------------------------------------------------------------------------
+// Sync change log (M7, ADR-010)
+// ---------------------------------------------------------------------------
+
+/**
+ * One row per changed object, written by triggers (drizzle/0006_change_log_triggers.sql), never
+ * by services. `xid` is the writing transaction: pulls read whole finished transactions only, so
+ * a transaction that commits late is never skipped (ADR-010).
+ */
+export const changeLog = pgTable(
+  'change_log',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    /** `pg_current_xact_id()` of the writing transaction, as a number. */
+    xid: bigint('xid', { mode: 'number' }).notNull(),
+    merchantId: uuid('merchant_id').notNull(),
+    /** Null for shop-level objects (catalogue, shop profile, staff). */
+    accountId: uuid('account_id'),
+    objectType: text('object_type').notNull(),
+    objectId: text('object_id').notNull(),
+    op: text('op').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('change_log_xid_idx').on(t.xid, t.id),
+    index('change_log_merchant_idx').on(t.merchantId, t.xid),
+    index('change_log_account_idx').on(t.accountId, t.xid),
+    check('change_log_op', sql`${t.op} IN ('upsert', 'delete')`),
+  ],
+);
+
 /** Tables the append-only trigger protects. Kept here so tests can iterate over them. */
 export const APPEND_ONLY_TABLES = ['entry', 'entry_line', 'audit_log'] as const;

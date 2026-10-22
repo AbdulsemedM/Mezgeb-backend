@@ -42,7 +42,7 @@ export interface LimitsView {
   state: LimitsResult;
 }
 
-function limitView(row: LimitRow): LimitView {
+export function limitView(row: LimitRow): LimitView {
   return {
     value: row.value,
     period: row.periodType

@@ -8,6 +8,6 @@ import { LimitsService } from './limits.service.js';
 @Module({
   controllers: [LedgerController],
   providers: [EntriesService, LimitsService, DisputesService],
-  exports: [EntriesService],
+  exports: [EntriesService, LimitsService, DisputesService],
 })
 export class LedgerModule {}

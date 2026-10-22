@@ -25,7 +25,7 @@ export interface DisputeView {
   created_at: string;
 }
 
-function disputeView(d: DisputeRow): DisputeView {
+export function disputeView(d: DisputeRow): DisputeView {
   return {
     id: d.id,
     entry_id: d.entryId,

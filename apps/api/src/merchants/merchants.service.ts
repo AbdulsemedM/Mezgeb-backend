@@ -293,7 +293,7 @@ export function idConflict(): AppError {
   );
 }
 
-function merchantView(m: MerchantRow, role: MerchantRole): MerchantView {
+export function merchantView(m: MerchantRow, role: MerchantRole): MerchantView {
   return {
     id: m.id,
     shop_name: m.shopName,

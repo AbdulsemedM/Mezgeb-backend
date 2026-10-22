@@ -76,7 +76,7 @@ export function shopView(r: RepresentativeRow): ShopRepresentativeView {
   };
 }
 
-function customerView(r: RepresentativeRow): CustomerRepresentativeView {
+export function customerView(r: RepresentativeRow): CustomerRepresentativeView {
   return {
     ...shopView(r),
     phone: r.phone,

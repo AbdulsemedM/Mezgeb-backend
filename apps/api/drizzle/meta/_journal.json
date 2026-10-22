@@ -36,6 +36,20 @@
       "when": 1792670297004,
       "tag": "0004_representatives",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792671250995,
+      "tag": "0005_change_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792671252061,
+      "tag": "0006_change_log_triggers",
+      "breakpoints": true
     }
   ]
 }

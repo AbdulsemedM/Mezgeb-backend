@@ -134,6 +134,16 @@ Representatives (M6, `apps/api/src/representatives/`; ADR-009):
   (`rep_revoked` / `rep_paused`); their own limit goes into the engine through `limitsInputFor(...,
   rep)` (rolling window from `limit_set_at`).
 
+Sync (M7, `apps/api/src/sync/`; ADR-010 is the contract the app builds on):
+
+- `POST /v1/sync` applies writes one transaction each through the REST services (entries in
+  `offline` mode), then pulls changes. A new synced op needs a case in `SyncService.run`, a row in
+  ADR-010 and a test.
+- `change_log` is written only by triggers (`drizzle/0006_change_log_triggers.sql`); a new synced
+  table needs a trigger there (new migration) and a branch in `SyncService.hydrate`.
+- Sync tests use `startTestApp({ ownContainer: true })`: pulls wait for every older running
+  transaction on the server, and other test files would hold that back.
+
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 
 - `pnpm --filter @mezgeb/api db:generate` — after editing the schema, generate the next migration.

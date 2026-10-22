@@ -6,5 +6,6 @@ import { RepresentativesService } from './representatives.service.js';
 @Module({
   controllers: [RepresentativesController],
   providers: [RepresentativesService],
+  exports: [RepresentativesService],
 })
 export class RepresentativesModule {}

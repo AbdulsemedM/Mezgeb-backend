@@ -14,6 +14,7 @@ import { LedgerModule } from './ledger/ledger.module.js';
 import { MerchantsModule } from './merchants/merchants.module.js';
 import { OutboxModule } from './outbox/outbox.module.js';
 import { RepresentativesModule } from './representatives/representatives.module.js';
+import { SyncModule } from './sync/sync.module.js';
 import { UsersModule } from './users/users.module.js';
 
 @Module({})
@@ -46,6 +47,7 @@ export class AppModule {
         AccountsModule,
         LedgerModule,
         RepresentativesModule,
+        SyncModule,
         ...(DEV_ROUTES ? [DevModule] : []),
       ],
     };
