@@ -208,7 +208,9 @@ describe('POST /v1/sync (M7, ADR-010)', () => {
       expect(pages.flatMap((p) => p.changes.limits)).toEqual([
         expect.objectContaining({ account_id: f.accountId, side: 'merchant', value: 50_000 }),
       ]);
-      expect(pages.flatMap((p) => p.changes.catalogue).map((c) => c.name)).toEqual(['Sugar']);
+      expect(pages.flatMap((p) => p.changes.catalogue)).toEqual([
+        expect.objectContaining({ name: 'Sugar', merchant_id: f.shop.merchantId }),
+      ]);
       expect(pages.flatMap((p) => p.changes.merchants)[0]).toMatchObject({
         id: f.shop.merchantId,
         role: 'owner',

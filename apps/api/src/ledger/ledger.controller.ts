@@ -144,6 +144,7 @@ export class LedgerController {
   async catalogue(@CurrentMerchantAccess() m: MerchantAccess): Promise<{
     items: {
       id: string;
+      merchant_id: string;
       name: string;
       aliases: string[];
       unit: string | null;
@@ -159,6 +160,7 @@ export class LedgerController {
     return {
       items: rows.map((r) => ({
         id: r.id,
+        merchant_id: r.merchantId,
         name: r.name,
         aliases: r.aliases,
         unit: r.unit,

@@ -64,6 +64,7 @@ export interface SyncChanges {
   limits: (LimitView & { account_id: string; side: 'merchant' | 'customer' })[];
   catalogue: {
     id: string;
+    merchant_id: string;
     name: string;
     aliases: string[];
     unit: string | null;
@@ -418,6 +419,7 @@ export class SyncService {
         .filter((r) => roleOf.has(r.merchantId))
         .map((r) => ({
           id: r.id,
+          merchant_id: r.merchantId,
           name: r.name,
           aliases: r.aliases,
           unit: r.unit,
