@@ -151,6 +151,15 @@ One-time raise (ADR-011, `apps/api/src/ledger/raises.service.ts`):
   approves without a code). `EntriesService.record` calls `usableRaise` when a purchase is over the
   hard stop: an approved raise valid for 60 minutes lifts it once and becomes `used`.
 
+Corrections and statements (ADR-012):
+
+- `CorrectionRequestsService` (`ledger/correction-requests.service.ts`): staff ask (`request_correction`),
+  the owner resolves with the correction's entry id or a note (`record_correction`). Shop side only:
+  the pull filters `correction_requests` by shop membership.
+- `StatementsService.build(access, userId, from, to)` gives the statement data (tested directly);
+  `statement.pdf.ts` renders it with pdfkit and `assets/fonts/NotoSansEthiopic-*.ttf`.
+  `displayDate(localDate, language, calendar)` formats dates for people.
+
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 
 - `pnpm --filter @mezgeb/api db:generate` — after editing the schema, generate the next migration.

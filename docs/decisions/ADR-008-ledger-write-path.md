@@ -44,5 +44,4 @@ command check accounts changed since a given time. Scheduling it nightly arrives
 in M10.
 
 ## Deferred
-Staff "request correction" (spec roles table) is planned with the corrections screens in the
-app's F7; M5 implements owner corrections only.
+Staff "request correction" (spec roles table) was built with the app's F7: ADR-012.

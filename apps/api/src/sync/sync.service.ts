@@ -1,10 +1,13 @@
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import {
   createAccountSchema,
+  createCorrectionRequestSchema,
   createDisputeSchema,
   createEntrySchema,
   createRepresentativeSchema,
   limitSideSchema,
+  resolveCorrectionRequestSchema,
+  resolveDisputeSchema,
   setLimitSchema,
   setRepresentativeStatusSchema,
   type SyncOp,
@@ -27,6 +30,7 @@ import {
   appUser,
   catalogueItem,
   changeLog,
+  correctionRequest,
   dispute,
   entry,
   entryLine,
@@ -34,6 +38,11 @@ import {
   merchantStaff,
   representative,
 } from '../db/schema.js';
+import {
+  type CorrectionRequestView,
+  CorrectionRequestsService,
+  correctionRequestView,
+} from '../ledger/correction-requests.service.js';
 import { type DisputeView, DisputesService, disputeView } from '../ledger/disputes.service.js';
 import { EntriesService } from '../ledger/entries.service.js';
 import { type EntryView, entryView, linesByEntry } from '../ledger/entry.views.js';
@@ -61,6 +70,8 @@ export interface SyncChanges {
   entries: EntryView[];
   representatives: unknown[];
   disputes: DisputeView[];
+  /** Shop side only (ADR-012). */
+  correction_requests: CorrectionRequestView[];
   limits: (LimitView & { account_id: string; side: 'merchant' | 'customer' })[];
   catalogue: {
     id: string;
@@ -128,6 +139,7 @@ export class SyncService {
     private readonly accounts: AccountsService,
     private readonly reps: RepresentativesService,
     private readonly disputes: DisputesService,
+    private readonly corrections: CorrectionRequestsService,
     private readonly limits: LimitsService,
   ) {}
 
@@ -211,6 +223,23 @@ export class SyncService {
         const { entry_id } = parse(withEntry, body);
         const disputeBody = parse(createDisputeSchema, omit(body, 'entry_id'));
         return (await this.disputes.create(userId, deviceId, entry_id, disputeBody)).view;
+      }
+      case 'dispute.resolve': {
+        const { id } = parse(withId, body);
+        return this.disputes.resolve(userId, id, parse(resolveDisputeSchema, omit(body, 'id')));
+      }
+      case 'correction_request.create': {
+        const { entry_id } = parse(withEntry, body);
+        const requestBody = parse(createCorrectionRequestSchema, omit(body, 'entry_id'));
+        return (await this.corrections.create(userId, deviceId, entry_id, requestBody)).view;
+      }
+      case 'correction_request.resolve': {
+        const { id } = parse(withId, body);
+        return this.corrections.resolve(
+          userId,
+          id,
+          parse(resolveCorrectionRequestSchema, omit(body, 'id')),
+        );
       }
       case 'limit.set': {
         const { account_id, side } = parse(limitTarget, body);
@@ -307,6 +336,7 @@ export class SyncService {
         entries: [],
         representatives: [],
         disputes: [],
+        correction_requests: [],
         limits: [],
         catalogue: [],
         merchants: [],
@@ -382,6 +412,19 @@ export class SyncService {
     if (disputeIds.length) {
       const rows = await this.db.select().from(dispute).where(inArray(dispute.id, disputeIds));
       out.changes.disputes = rows.map(disputeView);
+    }
+
+    const requestIds = ids('correction_request');
+    if (requestIds.length) {
+      const rows = await this.db
+        .select({ request: correctionRequest, merchantId: account.merchantId })
+        .from(correctionRequest)
+        .innerJoin(entry, eq(entry.id, correctionRequest.entryId))
+        .innerJoin(account, eq(account.id, entry.accountId))
+        .where(inArray(correctionRequest.id, requestIds));
+      out.changes.correction_requests = rows
+        .filter((r) => roleOf.has(r.merchantId))
+        .map((r) => correctionRequestView(r.request));
     }
 
     // Limits: owner and customer only (ADR-003); a missing row was deleted.

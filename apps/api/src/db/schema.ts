@@ -91,6 +91,12 @@ export const orderStatus = pgEnum('order_status', [
   'declined',
 ]);
 export const disputeStatus = pgEnum('dispute_status', ['open', 'resolved']);
+/** ADR-012: staff ask, the owner corrects or declines. */
+export const correctionRequestStatus = pgEnum('correction_request_status', [
+  'open',
+  'corrected',
+  'declined',
+]);
 /** ADR-011: a one-time raise over the customer's hard stop. */
 export const raiseStatus = pgEnum('raise_status', ['pending', 'approved', 'used', 'expired']);
 export const raiseApproval = pgEnum('raise_approval', ['code', 'app']);
@@ -602,6 +608,42 @@ export const dispute = pgTable(
     check(
       'dispute_resolution',
       sql`${t.status} = 'open' OR ${t.resolutionEntryId} IS NOT NULL OR ${t.resolutionNote} IS NOT NULL`,
+    ),
+  ],
+);
+
+/**
+ * ADR-012: staff cannot post corrections (ADR-006); they ask the owner, who posts the correction
+ * (`resolution_entry_id`) or declines with a note. Shop side only: never synced to customers.
+ */
+export const correctionRequest = pgTable(
+  'correction_request',
+  {
+    id: uuid('id').primaryKey(),
+    entryId: uuid('entry_id')
+      .notNull()
+      .references(() => entry.id),
+    requestedBy: uuid('requested_by')
+      .notNull()
+      .references(() => appUser.id),
+    /** The correction staff propose, signed santim (negative lowers the balance). */
+    amount: santim('amount').notNull(),
+    reason: text('reason').notNull(),
+    status: correctionRequestStatus('status').notNull().default('open'),
+    resolutionEntryId: uuid('resolution_entry_id').references(() => entry.id),
+    resolutionNote: text('resolution_note'),
+    resolvedBy: uuid('resolved_by').references(() => appUser.id),
+    resolvedAt: ts('resolved_at'),
+    createdAt: createdAt(),
+    deviceId: deviceId(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('correction_request_entry_idx').on(t.entryId),
+    check('correction_request_amount', sql`${t.amount} <> 0`),
+    check(
+      'correction_request_resolution',
+      sql`(${t.status} = 'open') OR (${t.status} = 'corrected' AND ${t.resolutionEntryId} IS NOT NULL) OR (${t.status} = 'declined' AND ${t.resolutionNote} IS NOT NULL)`,
     ),
   ],
 );

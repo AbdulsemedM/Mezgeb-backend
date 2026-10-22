@@ -89,6 +89,52 @@ const messages = {
     am: '{customer} የ{amount} መዝገብን ተቃውመዋል፦ {reason}። ለመፍታት መዝገብን ይክፈቱ።',
     om: '{customer} galmee {amount} mormaniiru: {reason}. Furuuf Mezgeb banaa.',
   },
+  // ADR-012: staff asked the owner to correct an entry.
+  'sms.correction_request': {
+    en: 'Your staff asked to correct an entry for {customer} by {amount}: {reason}. Open Mezgeb to answer.',
+    am: 'ሰራተኛዎ የ{customer}ን መዝገብ በ{amount} እንዲታረም ጠይቀዋል፦ {reason}። ለመመለስ መዝገብን ይክፈቱ።',
+    om: 'Hojjetaan keessan galmee {customer} {amount}n akka sirreeffamu gaafateera: {reason}. Deebisuuf Mezgeb banaa.',
+  },
+  // M11 statement PDF (LED-7, US-14).
+  'statement.title': { en: 'Dube statement', am: 'የዱቤ መግለጫ', om: 'Ibsa dube' },
+  'statement.shop': { en: 'Shop', am: 'ሱቅ', om: 'Suuqii' },
+  'statement.customer': { en: 'Customer', am: 'ደንበኛ', om: 'Maamila' },
+  'statement.period': { en: 'Period', am: 'ጊዜ', om: 'Yeroo' },
+  'statement.opening': {
+    en: 'Balance at the start',
+    am: 'በመጀመሪያ የነበረ ቀሪ ሂሳብ',
+    om: 'Haftee jalqabaa',
+  },
+  'statement.closing': {
+    en: 'Balance at the end',
+    am: 'በመጨረሻ ያለ ቀሪ ሂሳብ',
+    om: 'Haftee dhumaa',
+  },
+  'statement.col_date': { en: 'Date', am: 'ቀን', om: 'Guyyaa' },
+  'statement.col_what': { en: 'What', am: 'ምን', om: 'Maal' },
+  'statement.col_who': { en: 'Taken by', am: 'የወሰደው', om: 'Kan fudhate' },
+  'statement.col_amount': { en: 'Amount', am: 'መጠን', om: 'Hanga' },
+  'statement.col_balance': { en: 'Balance', am: 'ቀሪ', om: 'Haftee' },
+  'statement.purchase': { en: 'Purchase', am: 'ግዢ', om: 'Bittaa' },
+  'statement.payment': { en: 'Payment', am: 'ክፍያ', om: 'Kaffaltii' },
+  'statement.correction': { en: 'Correction', am: 'እርማት', om: 'Sirreeffama' },
+  'statement.who_customer': { en: 'Customer', am: 'ደንበኛ', om: 'Maamila' },
+  'statement.who_delivery': { en: 'Delivery', am: 'በማድረስ', om: 'Geejjiba' },
+  'statement.no_entries': {
+    en: 'Nothing was recorded in this period.',
+    am: 'በዚህ ጊዜ ምንም አልተመዘገበም።',
+    om: 'Yeroo kana keessa homtuu hin galmoofne.',
+  },
+  'statement.chain': {
+    en: 'Last entry number {seq}, check code {hash}',
+    am: 'የመጨረሻ መዝገብ ቁጥር {seq}፣ ማረጋገጫ ኮድ {hash}',
+    om: 'Lakkoofsa galmee dhumaa {seq}, koodii mirkaneessaa {hash}',
+  },
+  'statement.generated': {
+    en: 'Made by Mezgeb on {date}. Mezgeb never adds interest or fees.',
+    am: 'በመዝገብ በ{date} የተዘጋጀ። መዝገብ ወለድ ወይም ክፍያ አይጨምርም።',
+    om: "Mezgeb'n {date} qophaa'e. Mezgeb dhala ykn kaffaltii hin dabalu.",
+  },
 } as const satisfies Record<string, Record<Language, string>>;
 
 export type MessageKey = keyof typeof messages;

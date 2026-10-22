@@ -111,6 +111,11 @@ export class DisputesService {
     if (!found) throw notFound('Dispute');
     const a = await this.access.requireAccount(userId, found.accountId, 'resolve_dispute');
     if (found.dispute.status === 'resolved') {
+      // The same answer again is a retry (e.g. a sync whose response was lost).
+      const same = body.correction_entry_id
+        ? found.dispute.resolutionEntryId === body.correction_entry_id
+        : found.dispute.resolutionNote === body.note;
+      if (same) return disputeView(found.dispute);
       throw new AppError(
         'dispute_resolved',
         'This dispute is already resolved',

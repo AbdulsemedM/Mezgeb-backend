@@ -16,7 +16,9 @@ import {
 import {
   type ApproveRaise,
   approveRaiseSchema,
+  type CreateCorrectionRequest,
   type CreateDispute,
+  createCorrectionRequestSchema,
   type CreateEntry,
   createDisputeSchema,
   createEntrySchema,
@@ -26,7 +28,9 @@ import {
   listEntriesQuerySchema,
   type RequestRaise,
   requestRaiseSchema,
+  type ResolveCorrectionRequest,
   type ResolveDispute,
+  resolveCorrectionRequestSchema,
   resolveDisputeSchema,
   type SetLimit,
   setLimitSchema,
@@ -39,13 +43,17 @@ import {
   CurrentMerchantAccess,
   MerchantActionRequired,
 } from '../access/access.guards.js';
-import type { AccountAccess, MerchantAccess } from '../access/access.service.js';
+import { type AccountAccess, forbidden, type MerchantAccess } from '../access/access.service.js';
 import { CurrentAuth } from '../auth/auth.decorators.js';
 import type { AuthContext } from '../auth/token.service.js';
 import { ZodValidationPipe } from '../common/zod.pipe.js';
 import { DB, type Db } from '../db/db.module.js';
 import { catalogueItem } from '../db/schema.js';
 import { type ChainVerification, verifyAccountChain } from './chain.js';
+import {
+  type CorrectionRequestView,
+  CorrectionRequestsService,
+} from './correction-requests.service.js';
 import { type DisputeView, DisputesService } from './disputes.service.js';
 import { EntriesService, type RecordedEntry } from './entries.service.js';
 import type { EntryView } from './entry.views.js';
@@ -60,6 +68,7 @@ export class LedgerController {
     private readonly limits: LimitsService,
     private readonly disputes: DisputesService,
     private readonly raises: RaisesService,
+    private readonly corrections: CorrectionRequestsService,
   ) {}
 
   /** ADR-011, online only: texts the customer a code. 201 when sent, 200 for a retry. */
@@ -169,6 +178,43 @@ export class LedgerController {
     @Body(new ZodValidationPipe(resolveDisputeSchema)) body: ResolveDispute,
   ): Promise<DisputeView> {
     return this.disputes.resolve(auth.userId, disputeId, body);
+  }
+
+  /** ADR-012: shop side only (owner and staff). */
+  @Get('accounts/:id/correction-requests')
+  @AccountActionRequired('view_entries')
+  listCorrectionRequests(
+    @CurrentAccountAccess() a: AccountAccess,
+  ): Promise<{ correction_requests: CorrectionRequestView[] }> {
+    if (a.role === 'customer') throw forbidden('request_correction');
+    return this.corrections.list(a);
+  }
+
+  @Post('entries/:id/correction-requests')
+  async requestCorrection(
+    @CurrentAuth() auth: AuthContext,
+    @Param('id') entryId: string,
+    @Body(new ZodValidationPipe(createCorrectionRequestSchema)) body: CreateCorrectionRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<CorrectionRequestView> {
+    const { created, view } = await this.corrections.create(
+      auth.userId,
+      auth.deviceId,
+      entryId,
+      body,
+    );
+    res.status(created ? HttpStatus.CREATED : HttpStatus.OK);
+    return view;
+  }
+
+  @Post('correction-requests/:id/resolve')
+  @HttpCode(HttpStatus.OK)
+  resolveCorrectionRequest(
+    @CurrentAuth() auth: AuthContext,
+    @Param('id') requestId: string,
+    @Body(new ZodValidationPipe(resolveCorrectionRequestSchema)) body: ResolveCorrectionRequest,
+  ): Promise<CorrectionRequestView> {
+    return this.corrections.resolve(auth.userId, requestId, body);
   }
 
   /** LED-4: names, units and last prices for suggestions at the counter. */

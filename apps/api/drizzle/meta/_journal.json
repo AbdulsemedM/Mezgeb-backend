@@ -57,6 +57,20 @@
       "when": 1792678359673,
       "tag": "0007_limit_raises",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792685393976,
+      "tag": "0008_correction_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792685399224,
+      "tag": "0009_correction_request_change_log",
+      "breakpoints": true
     }
   ]
 }

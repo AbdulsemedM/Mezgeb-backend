@@ -9,6 +9,7 @@ const TABLES = [
   'audit_log',
   'catalogue_item',
   'change_log',
+  'correction_request',
   'delivery_order',
   'device',
   'dispute',
@@ -53,7 +54,7 @@ describe('migrations', () => {
     const before = await count();
     await runMigrations(t.pool);
     expect(await count()).toBe(before);
-    expect(before).toBe(8);
+    expect(before).toBe(10);
   });
 
   it('install the append-only and change-log triggers', async () => {
@@ -66,6 +67,7 @@ describe('migrations', () => {
       // M7, ADR-010: one per synced table
       'change_account',
       'change_catalogue',
+      'change_correction_request',
       'change_dispute',
       'change_entry',
       'change_limit',

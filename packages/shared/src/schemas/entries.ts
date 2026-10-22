@@ -150,3 +150,23 @@ export const resolveDisputeSchema = z
     'give a correction_entry_id or a note',
   );
 export type ResolveDispute = z.infer<typeof resolveDisputeSchema>;
+
+/** ADR-012: staff ask the owner to correct an entry by `amount` (signed santim). */
+export const createCorrectionRequestSchema = z.object({
+  id: z.uuid(),
+  amount: santim.refine((n) => n !== 0, 'a correction changes the balance'),
+  reason: text(280),
+});
+export type CreateCorrectionRequest = z.infer<typeof createCorrectionRequestSchema>;
+
+/** The owner posted the correction (its entry id), or declines with a note. */
+export const resolveCorrectionRequestSchema = resolveDisputeSchema;
+export type ResolveCorrectionRequest = ResolveDispute;
+
+const localDateText = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD');
+
+/** `GET /v1/accounts/{id}/statement.pdf?from&to`: Addis local dates, both included (M11). */
+export const statementQuerySchema = z
+  .object({ from: localDateText, to: localDateText })
+  .refine((q) => q.from <= q.to, 'the period ends before it starts');
+export type StatementQuery = z.infer<typeof statementQuerySchema>;

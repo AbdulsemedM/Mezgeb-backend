@@ -137,7 +137,8 @@ Review the plan before saying OK. Most mistakes are cheaper to catch there.
 ## M11 — Statements and dashboards
 
 - `GET /v1/accounts/{id}/statement.pdf` with entries, payments, who took what, closing balance,
-  closing seq and hash, in the requester's language and calendar.
+  closing seq and hash, in the requester's language and calendar. (Built early with the app's F7:
+  ADR-012.)
 - Merchant home (DSH-1) and customer home (DSH-2) endpoints; DSH-3 reports if time allows.
 
 ## M12 — Vision proxy, hardening, deployment
