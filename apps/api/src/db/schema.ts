@@ -91,6 +91,9 @@ export const orderStatus = pgEnum('order_status', [
   'declined',
 ]);
 export const disputeStatus = pgEnum('dispute_status', ['open', 'resolved']);
+/** ADR-011: a one-time raise over the customer's hard stop. */
+export const raiseStatus = pgEnum('raise_status', ['pending', 'approved', 'used', 'expired']);
+export const raiseApproval = pgEnum('raise_approval', ['code', 'app']);
 export const notificationChannel = pgEnum('notification_channel', ['push', 'sms']);
 export const notificationStatus = pgEnum('notification_status', [
   'pending',
@@ -711,6 +714,47 @@ export const refreshToken = pgTable(
 // ---------------------------------------------------------------------------
 // Sync change log (M7, ADR-010)
 // ---------------------------------------------------------------------------
+
+/**
+ * ADR-011: the shop asks to sell over the customer's hard stop once; the customer approves by
+ * giving the shop the SMS code (or, later, in their app). An approved raise lifts the hard stop
+ * by `amount` for the next purchase on the account until `valid_until`. Not synced: the request
+ * is online only.
+ */
+export const limitRaise = pgTable(
+  'limit_raise',
+  {
+    id: uuid('id').primaryKey(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => account.id),
+    /** How far over the hard stop the customer allows, once. */
+    amount: santim('amount').notNull(),
+    status: raiseStatus('status').notNull().default('pending'),
+    /** HMAC of the SMS code (OTP_PEPPER), never the code. */
+    codeHash: text('code_hash').notNull(),
+    failedAttempts: integer('failed_attempts').notNull().default(0),
+    /** The code works until then. */
+    expiresAt: ts('expires_at').notNull(),
+    approvedAt: ts('approved_at'),
+    approvedVia: raiseApproval('approved_via'),
+    /** An approved raise is used by a purchase recorded before then. */
+    validUntil: ts('valid_until'),
+    usedByEntryId: uuid('used_by_entry_id').references((): AnyPgColumn => entry.id),
+    createdAt: createdAt(),
+    createdBy: createdBy(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('limit_raise_account_idx').on(t.accountId, t.status),
+    check('limit_raise_amount_pos', sql`${t.amount} > 0`),
+    check(
+      'limit_raise_approved',
+      sql`(${t.status} IN ('approved', 'used')) = (${t.approvedAt} IS NOT NULL AND ${t.validUntil} IS NOT NULL)`,
+    ),
+    check('limit_raise_used', sql`(${t.status} = 'used') = (${t.usedByEntryId} IS NOT NULL)`),
+  ],
+);
 
 /**
  * One row per changed object, written by triggers (drizzle/0006_change_log_triggers.sql), never

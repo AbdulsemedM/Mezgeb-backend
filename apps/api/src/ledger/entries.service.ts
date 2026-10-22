@@ -28,6 +28,7 @@ import {
   device,
   entry,
   entryLine,
+  limitRaise,
   representative,
 } from '../db/schema.js';
 import { verifyDeviceSignature } from '../devices/device-key.js';
@@ -36,6 +37,7 @@ import { idConflict } from '../merchants/merchants.service.js';
 import { OutboxService } from '../outbox/outbox.service.js';
 import { type EntryRow, type EntryView, entryView, linesByEntry } from './entry.views.js';
 import { limitsInputFor } from './limits.service.js';
+import { usableRaise } from './raises.service.js';
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 type AccountRow = typeof account.$inferSelect;
@@ -157,8 +159,19 @@ export class EntriesService {
         flags.push(rep.status === 'revoked' ? 'rep_revoked' : 'rep_paused');
       }
       let limits: LimitsResult | null = null;
+      let raiseUsed: string | null = null;
       if (body.type === 'purchase') {
-        limits = evaluateLimits(await limitsInputFor(tx, acct!, body.amount, now, rep));
+        const input = await limitsInputFor(tx, acct!, body.amount, now, rep);
+        limits = evaluateLimits(input);
+        // ADR-011: an approved one-time raise lets this purchase past the hard stop.
+        if (limits.flags.includes('over_hard_stop')) {
+          const raise = await usableRaise(tx, acct!.id, now);
+          const raised = raise && evaluateLimits({ ...input, oneTimeRaise: raise.amount });
+          if (raise && raised && !raised.flags.includes('over_hard_stop')) {
+            limits = raised;
+            raiseUsed = raise.id;
+          }
+        }
         if (limits.flags.includes('over_hard_stop')) {
           if (mode === 'online') {
             throw new AppError(
@@ -252,6 +265,12 @@ export class EntriesService {
         .where(eq(account.id, acct!.id))
         .returning();
 
+      if (raiseUsed) {
+        await tx
+          .update(limitRaise)
+          .set({ status: 'used', usedByEntryId: body.id, updatedAt: now })
+          .where(eq(limitRaise.id, raiseUsed));
+      }
       await this.learnCatalogue(tx, acct!.merchantId, body, auth, now);
       await this.audit.record(tx, {
         actorUserId: auth.userId,

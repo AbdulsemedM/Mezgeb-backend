@@ -7,12 +7,15 @@ import {
   HttpStatus,
   Inject,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Query,
   Res,
 } from '@nestjs/common';
 import {
+  type ApproveRaise,
+  approveRaiseSchema,
   type CreateDispute,
   type CreateEntry,
   createDisputeSchema,
@@ -21,6 +24,8 @@ import {
   limitSideSchema,
   type ListEntriesQuery,
   listEntriesQuerySchema,
+  type RequestRaise,
+  requestRaiseSchema,
   type ResolveDispute,
   resolveDisputeSchema,
   type SetLimit,
@@ -45,6 +50,7 @@ import { type DisputeView, DisputesService } from './disputes.service.js';
 import { EntriesService, type RecordedEntry } from './entries.service.js';
 import type { EntryView } from './entry.views.js';
 import { type LimitsView, LimitsService, type LimitView } from './limits.service.js';
+import { RaisesService, type RaiseView } from './raises.service.js';
 
 @Controller()
 export class LedgerController {
@@ -53,7 +59,34 @@ export class LedgerController {
     private readonly entries: EntriesService,
     private readonly limits: LimitsService,
     private readonly disputes: DisputesService,
+    private readonly raises: RaisesService,
   ) {}
+
+  /** ADR-011, online only: texts the customer a code. 201 when sent, 200 for a retry. */
+  @Post('accounts/:id/raises')
+  @AccountActionRequired('request_raise')
+  async requestRaise(
+    @CurrentAccountAccess() a: AccountAccess,
+    @CurrentAuth() auth: AuthContext,
+    @Body(new ZodValidationPipe(requestRaiseSchema)) body: RequestRaise,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<RaiseView> {
+    const { created, view } = await this.raises.request(a, auth.userId, body);
+    res.status(created ? HttpStatus.CREATED : HttpStatus.OK);
+    return view;
+  }
+
+  @Post('accounts/:id/raises/:raiseId/approve')
+  @AccountActionRequired('approve_raise')
+  @HttpCode(HttpStatus.OK)
+  approveRaise(
+    @CurrentAccountAccess() a: AccountAccess,
+    @CurrentAuth() auth: AuthContext,
+    @Param('raiseId', new ParseUUIDPipe()) raiseId: string,
+    @Body(new ZodValidationPipe(approveRaiseSchema)) body: ApproveRaise,
+  ): Promise<RaiseView> {
+    return this.raises.approve(a, auth.userId, raiseId, body);
+  }
 
   /** Online path (ADR-008). Which entry types the role may record is checked in the service. */
   @Post('accounts/:id/entries')

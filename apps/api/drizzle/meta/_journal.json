@@ -50,6 +50,13 @@
       "when": 1792671252061,
       "tag": "0006_change_log_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792678359673,
+      "tag": "0007_limit_raises",
+      "breakpoints": true
     }
   ]
 }

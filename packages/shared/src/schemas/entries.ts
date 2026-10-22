@@ -126,6 +126,19 @@ export const setLimitSchema = z
   });
 export type SetLimit = z.infer<typeof setLimitSchema>;
 
+/** ADR-011, online only: ask the customer to allow going over their hard stop once. */
+export const requestRaiseSchema = z.object({ id: z.uuid(), amount: santim.positive() });
+export type RequestRaise = z.infer<typeof requestRaiseSchema>;
+
+/** The shop types the code the customer read from the SMS; the customer's app sends none. */
+export const approveRaiseSchema = z.object({
+  code: z
+    .string()
+    .regex(/^\d{6}$/)
+    .optional(),
+});
+export type ApproveRaise = z.infer<typeof approveRaiseSchema>;
+
 export const createDisputeSchema = z.object({ id: z.uuid(), reason: text(280) });
 export type CreateDispute = z.infer<typeof createDisputeSchema>;
 

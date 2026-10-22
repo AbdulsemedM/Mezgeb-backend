@@ -112,7 +112,7 @@ Review the plan before saying OK. Most mistakes are cheaper to catch there.
 - Customer payment reports (reported → confirmed | rejected, resubmit after reject).
 - Merchant confirm/reject (online only); merchant-recorded cash payment.
 - Confirmation creates a server-origin payment entry (ADR-001).
-- Hard-stop one-time raise: merchant requests, customer approves from phone.
+- Hard-stop one-time raise: merchant requests, customer approves from phone. (Built early with the app's F6: ADR-011, approval by SMS code.)
 - 48-hour reminder job for unreviewed reports.
 
 **Done when:** US-09, US-10, US-11 pass; balance and limit usage update correctly with partial payments; period reset only on full clearance.

@@ -14,6 +14,7 @@ const TABLES = [
   'dispute',
   'entry',
   'entry_line',
+  'limit_raise',
   'merchant',
   'merchant_staff',
   'notification',
@@ -52,7 +53,7 @@ describe('migrations', () => {
     const before = await count();
     await runMigrations(t.pool);
     expect(await count()).toBe(before);
-    expect(before).toBe(7);
+    expect(before).toBe(8);
   });
 
   it('install the append-only and change-log triggers', async () => {

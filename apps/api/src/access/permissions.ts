@@ -23,6 +23,10 @@ export const ACCOUNT_PERMISSIONS = {
   view_limits: ['owner', 'customer'],
   set_merchant_limit: ['owner'],
   set_customer_limit: ['customer'],
+  /** ADR-011: the counter asks to go over the customer's hard stop once. */
+  request_raise: ['owner', 'staff'],
+  /** The shop with the customer's SMS code, or the customer in their app. */
+  approve_raise: ['owner', 'staff', 'customer'],
   /** The merchant's picker needs the active representatives (REP-4). */
   view_representatives: ['owner', 'staff', 'customer'],
   manage_representatives: ['customer'],

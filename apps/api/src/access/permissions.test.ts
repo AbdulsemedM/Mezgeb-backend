@@ -31,6 +31,9 @@ const EXPECTED_ACCOUNT: Record<string, string> = {
   view_limits: 'OC',
   set_merchant_limit: 'O',
   set_customer_limit: 'C',
+  // ADR-011: the counter asks for a one-time raise; approved with the code or by the customer
+  request_raise: 'OS',
+  approve_raise: 'OSC',
   // "Add or revoke representatives": customer only; the picker is visible to the shop
   manage_representatives: 'C',
   // REP-6: the counter asks for the PIN

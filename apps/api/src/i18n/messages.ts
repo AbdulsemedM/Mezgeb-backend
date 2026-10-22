@@ -17,6 +17,12 @@ const messages = {
     am: '{shop} በመዝገብ ላይ አክሎዎታል፤ የጋራ የዱቤ ደብተርዎ ነው። እያንዳንዱን ግዢና ቀሪ ሂሳብዎን ይመልከቱ፦ {link}',
     om: '{shop} Mezgeb irratti isin dabaleera, kitaaba dube keessan kan waliinii. Bittaa hundaafi haftee keessan ilaalaa: {link}',
   },
+  // ADR-011: the shop asks to go over the customer's hard stop once.
+  'sms.raise_code': {
+    en: '{shop} asks to put {amount} more than your limit on your dube, once. If you agree, give the shop this code: {code}. It works for {minutes} minutes.',
+    am: '{shop} ከገደብዎ በላይ {amount} በዱቤዎ ላይ አንድ ጊዜ ለመመዝገብ ይጠይቃል። ከተስማሙ ይህን ኮድ ለሱቁ ይስጡ፦ {code}። ለ{minutes} ደቂቃ ያገለግላል።',
+    om: '{shop} daangaa keessan ol {amount} dube keessan irratti al tokko galmeessuuf gaafata. Yoo walii galtan, koodii kana suuqiidhaaf kennaa: {code}. Daqiiqaa {minutes}f hojjeta.',
+  },
   // Notifications matrix: "Purchase recorded" — items, amount, who took it, new balance.
   'sms.purchase': {
     en: '{shop}: {amount} on your dube ({items}), taken by {who}. New balance: {balance}.',

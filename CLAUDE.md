@@ -144,6 +144,13 @@ Sync (M7, `apps/api/src/sync/`; ADR-010 is the contract the app builds on):
 - Sync tests use `startTestApp({ ownContainer: true })`: pulls wait for every older running
   transaction on the server, and other test files would hold that back.
 
+One-time raise (ADR-011, `apps/api/src/ledger/raises.service.ts`):
+
+- `POST /v1/accounts/:id/raises` texts the customer a 6-digit code (sent directly like the OTP;
+  HMAC in `limit_raise.code_hash`). `.../raises/:raiseId/approve {code}` approves it (the customer
+  approves without a code). `EntriesService.record` calls `usableRaise` when a purchase is over the
+  hard stop: an approved raise valid for 60 minutes lifts it once and becomes `used`.
+
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 
 - `pnpm --filter @mezgeb/api db:generate` — after editing the schema, generate the next migration.
