@@ -5,6 +5,17 @@ import { isCanonicalTimestamp } from '../signing.js';
 /** Ledger request bodies (M5, ADR-001, ADR-004, ADR-008). JSON is snake_case. */
 
 const santim = z.number().int().refine(Number.isSafeInteger, 'must be a safe integer');
+
+export const PAYMENT_METHODS = [
+  'cash',
+  'telebirr',
+  'cbe_birr',
+  'mpesa',
+  'bank_transfer',
+  'other',
+] as const;
+export const paymentMethodSchema = z.enum(PAYMENT_METHODS);
+export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
 const text = (max: number) => z.string().trim().min(1).max(max);
 /**
  * Signed text is checked, never transformed: the server must see exactly the bytes the device
@@ -48,7 +59,7 @@ export type EntryLineInput = z.infer<typeof entryLineSchema>;
 export const createEntrySchema = z
   .object({
     id: z.uuid(),
-    type: z.enum(['purchase', 'correction']),
+    type: z.enum(['purchase', 'payment', 'correction']),
     amount: santim,
     lines: z.array(entryLineSchema).max(100).default([]),
     taken_by_type: z.enum(['customer', 'representative', 'delivery']).nullish(),
@@ -56,6 +67,8 @@ export const createEntrySchema = z
     /** Delivery orders arrive in M9. */
     order_id: z.null().optional(),
     ref_entry_id: z.uuid().nullish(),
+    /** Payments only (ADR-013); not signed. */
+    method: paymentMethodSchema.nullish(),
     /** Correction reason or limit override reason. Signed. */
     reason: signedText(280).nullish(),
     device_id: z.uuid(),
@@ -66,11 +79,20 @@ export const createEntrySchema = z
   .superRefine((e, ctx) => {
     const issue = (path: string, message: string) =>
       ctx.addIssue({ code: 'custom', path: [path], message });
+    if (e.type === 'payment') {
+      if (e.amount <= 0) issue('amount', 'a payment amount is positive');
+      if (e.method == null) issue('method', 'a payment says how it was paid');
+      if (e.lines.length > 0) issue('lines', 'a payment has no lines');
+      if (e.taken_by_type != null) issue('taken_by_type', 'only purchases say who took them');
+      if (e.ref_entry_id != null) issue('ref_entry_id', 'only corrections reference an entry');
+    } else if (e.method != null) {
+      issue('method', 'only payments have a method');
+    }
     if (e.type === 'purchase') {
       if (e.amount <= 0) issue('amount', 'a purchase amount is positive');
       if (e.taken_by_type == null) issue('taken_by_type', 'a purchase says who took the goods');
       if (e.ref_entry_id != null) issue('ref_entry_id', 'only corrections reference an entry');
-    } else {
+    } else if (e.type === 'correction') {
       if (e.amount === 0) issue('amount', 'a correction changes the balance (ADR-004)');
       if (e.taken_by_type != null) issue('taken_by_type', 'only purchases say who took them');
       if (e.ref_entry_id == null) issue('ref_entry_id', 'a correction references the original');
@@ -170,3 +192,26 @@ export const statementQuerySchema = z
   .object({ from: localDateText, to: localDateText })
   .refine((q) => q.from <= q.to, 'the period ends before it starts');
 export type StatementQuery = z.infer<typeof statementQuerySchema>;
+
+/** PAY-1, online, owner only: ask the customer to pay (part of) the balance. */
+export const createPaymeSchema = z.object({
+  id: z.uuid(),
+  amount: santim.positive(),
+  message: text(280).optional(),
+  due_date: localDateText.optional(),
+});
+export type CreatePayme = z.infer<typeof createPaymeSchema>;
+
+/** PAY-2, the customer (PWA): "I paid". Resubmitting after a rejection links the old report. */
+export const createPaymentReportSchema = z.object({
+  id: z.uuid(),
+  amount: santim.positive(),
+  method: paymentMethodSchema,
+  reference: text(80).optional(),
+  resubmitted_from_id: z.uuid().optional(),
+});
+export type CreatePaymentReport = z.infer<typeof createPaymentReportSchema>;
+
+/** PAY-3, online, owner only. */
+export const rejectPaymentReportSchema = z.object({ reason: text(280) });
+export type RejectPaymentReport = z.infer<typeof rejectPaymentReportSchema>;

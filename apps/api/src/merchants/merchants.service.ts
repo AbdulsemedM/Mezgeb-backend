@@ -30,6 +30,8 @@ export interface MerchantView {
   woreda: string | null;
   landmark: string | null;
   default_detail_mode: MerchantRow['defaultDetailMode'];
+  /** PAY-7: shown to customers on pay-me requests. */
+  payment_details: string | null;
   plan: MerchantRow['plan'];
   role: MerchantRole;
   created_at: string;
@@ -133,6 +135,7 @@ export class MerchantsService {
           ...(body.default_detail_mode !== undefined && {
             defaultDetailMode: body.default_detail_mode,
           }),
+          ...(body.payment_details !== undefined && { paymentDetails: body.payment_details }),
           updatedAt: now,
         })
         .where(eq(merchant.id, access.merchant.id))
@@ -301,6 +304,7 @@ export function merchantView(m: MerchantRow, role: MerchantRole): MerchantView {
     woreda: m.woreda,
     landmark: m.landmark,
     default_detail_mode: m.defaultDetailMode,
+    payment_details: m.paymentDetails,
     plan: m.plan,
     role,
     created_at: m.createdAt.toISOString(),
@@ -318,6 +322,7 @@ function pickChanged(m: MerchantRow, body: UpdateMerchant): Record<string, unkno
     woreda: m.woreda,
     landmark: m.landmark,
     default_detail_mode: m.defaultDetailMode,
+    payment_details: m.paymentDetails,
   };
   return Object.fromEntries(Object.keys(body).map((k) => [k, current[k]]));
 }

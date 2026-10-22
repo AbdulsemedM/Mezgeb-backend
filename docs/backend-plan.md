@@ -113,7 +113,7 @@ Review the plan before saying OK. Most mistakes are cheaper to catch there.
 - Merchant confirm/reject (online only); merchant-recorded cash payment.
 - Confirmation creates a server-origin payment entry (ADR-001).
 - Hard-stop one-time raise: merchant requests, customer approves from phone. (Built early with the app's F6: ADR-011, approval by SMS code.)
-- 48-hour reminder job for unreviewed reports.
+- 48-hour reminder job for unreviewed reports. (Moved to M10 with the scheduler; M8 built per ADR-013.)
 
 **Done when:** US-09, US-10, US-11 pass; balance and limit usage update correctly with partial payments; period reset only on full clearance.
 

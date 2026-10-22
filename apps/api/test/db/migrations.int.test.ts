@@ -54,7 +54,7 @@ describe('migrations', () => {
     const before = await count();
     await runMigrations(t.pool);
     expect(await count()).toBe(before);
-    expect(before).toBe(10);
+    expect(before).toBe(12);
   });
 
   it('install the append-only and change-log triggers', async () => {
@@ -72,6 +72,8 @@ describe('migrations', () => {
       'change_entry',
       'change_limit',
       'change_merchant',
+      'change_payme_request',
+      'change_payment_report',
       'change_representative',
       'change_staff',
       'entry_append_only',

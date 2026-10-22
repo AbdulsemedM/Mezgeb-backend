@@ -135,6 +135,48 @@ const messages = {
     am: 'በመዝገብ በ{date} የተዘጋጀ። መዝገብ ወለድ ወይም ክፍያ አይጨምርም።',
     om: "Mezgeb'n {date} qophaa'e. Mezgeb dhala ykn kaffaltii hin dabalu.",
   },
+  // ADR-013 payments.
+  'sms.payment_recorded': {
+    en: '{shop} recorded your payment of {amount} ({method}). New balance: {balance}.',
+    am: '{shop} የ{amount} ክፍያዎን ({method}) መዝግቧል። አዲስ ቀሪ ሂሳብ፦ {balance}።',
+    om: '{shop} kaffaltii keessan {amount} ({method}) galmeesseera. Haftee haaraa: {balance}.',
+  },
+  'sms.payme': {
+    en: '{shop} asks you to pay {amount} on your dube. {message}{details}',
+    am: '{shop} በዱቤዎ ላይ {amount} እንዲከፍሉ ይጠይቃል። {message}{details}',
+    om: '{shop} dube keessan irratti {amount} akka kaffaltan gaafata. {message}{details}',
+  },
+  'sms.payme_details': {
+    en: 'Pay to: {details}. ',
+    am: 'የሚከፈልበት፦ {details}። ',
+    om: 'Itti kaffalaa: {details}. ',
+  },
+  'sms.payme_due': {
+    en: 'Please pay by {date}. ',
+    am: 'እስከ {date} ይክፈሉ። ',
+    om: 'Hanga {date} kaffalaa. ',
+  },
+  'sms.payment_reported': {
+    en: '{customer} says they paid {amount} by {method}. Open Mezgeb to confirm it.',
+    am: '{customer} {amount} በ{method} እንደከፈሉ ይናገራሉ። ለማረጋገጥ መዝገብን ይክፈቱ።',
+    om: '{customer} {amount} {method}n akka kaffalan himu. Mirkaneessuuf Mezgeb banaa.',
+  },
+  'sms.payment_confirmed': {
+    en: '{shop} confirmed your payment of {amount}. New balance: {balance}.',
+    am: '{shop} የ{amount} ክፍያዎን አረጋግጧል። አዲስ ቀሪ ሂሳብ፦ {balance}።',
+    om: '{shop} kaffaltii keessan {amount} mirkaneesseera. Haftee haaraa: {balance}.',
+  },
+  'sms.payment_rejected': {
+    en: '{shop} did not accept your payment report of {amount}: {reason}. You can report it again.',
+    am: '{shop} የ{amount} የክፍያ ሪፖርትዎን አልተቀበለም፦ {reason}። እንደገና ሪፖርት ማድረግ ይችላሉ።',
+    om: "{shop} gabaasa kaffaltii keessan {amount} hin fudhanne: {reason}. Irra deebi'uun gabaasuu dandeessu.",
+  },
+  'payment_method.cash': { en: 'cash', am: 'በጥሬ ገንዘብ', om: 'maallaqa harkaa' },
+  'payment_method.telebirr': { en: 'telebirr', am: 'ቴሌብር', om: 'telebirr' },
+  'payment_method.cbe_birr': { en: 'CBE Birr', am: 'ሲቢኢ ብር', om: 'CBE Birr' },
+  'payment_method.mpesa': { en: 'M-PESA', am: 'ኤም-ፔሳ', om: 'M-PESA' },
+  'payment_method.bank_transfer': { en: 'bank transfer', am: 'በባንክ ዝውውር', om: 'baankii' },
+  'payment_method.other': { en: 'another way', am: 'በሌላ መንገድ', om: 'karaa biraa' },
 } as const satisfies Record<string, Record<Language, string>>;
 
 export type MessageKey = keyof typeof messages;

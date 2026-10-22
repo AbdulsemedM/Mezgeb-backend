@@ -71,6 +71,20 @@
       "when": 1792685399224,
       "tag": "0009_correction_request_change_log",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792698290878,
+      "tag": "0010_payments",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792698301390,
+      "tag": "0011_payments_change_log",
+      "breakpoints": true
     }
   ]
 }

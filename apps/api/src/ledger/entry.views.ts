@@ -26,6 +26,8 @@ export interface EntryView {
   order_id: string | null;
   ref_entry_id: string | null;
   reason: string | null;
+  /** Payments only (ADR-013). */
+  payment_method: EntryRow['paymentMethod'];
   seq: number;
   prev_hash: string;
   hash: string;
@@ -62,6 +64,7 @@ export function entryView(e: EntryRow, lines: EntryLineRow[]): EntryView {
     order_id: e.orderId,
     ref_entry_id: e.refEntryId,
     reason: e.reason,
+    payment_method: e.paymentMethod,
     seq: e.seq,
     prev_hash: e.prevHash,
     hash: e.hash,

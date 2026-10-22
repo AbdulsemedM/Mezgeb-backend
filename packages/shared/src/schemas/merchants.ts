@@ -28,6 +28,8 @@ export const updateMerchantSchema = z
     woreda: shortText(60).nullable(),
     landmark: shortText(120).nullable(),
     default_detail_mode: detailModeSchema,
+    /** PAY-7, shown on pay-me requests. */
+    payment_details: shortText(300).nullable(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'At least one field is required');

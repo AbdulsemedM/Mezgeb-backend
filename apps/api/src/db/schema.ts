@@ -178,6 +178,8 @@ export const merchant = pgTable(
     woreda: text('woreda'),
     landmark: text('landmark'),
     defaultDetailMode: detailMode('default_detail_mode').notNull().default('simple'),
+    /** PAY-7: how customers can pay (telebirr number, bank account…), shown on pay-me requests. */
+    paymentDetails: text('payment_details'),
     plan: merchantPlan('plan').notNull().default('free'),
     termsAcceptedAt: ts('terms_accepted_at').notNull(),
     termsVersion: text('terms_version').notNull(),
@@ -416,6 +418,8 @@ export const entry = pgTable(
     recordedAt: ts('recorded_at').notNull(),
     /** For server-origin entries: the authenticated request, whose actor is in audit_log. */
     requestId: uuid('request_id'),
+    /** Payments only (ADR-013): how it was paid. Not part of the signed payload. */
+    paymentMethod: paymentMethod('payment_method'),
 
     flags: entryFlag('flags')
       .array()
@@ -440,6 +444,7 @@ export const entry = pgTable(
       sql`(${t.origin} = 'device' AND ${t.deviceId} IS NOT NULL AND ${t.deviceSeq} IS NOT NULL AND ${t.deviceSig} IS NOT NULL)
        OR (${t.origin} = 'server' AND ${t.deviceId} IS NULL AND ${t.deviceSeq} IS NULL AND ${t.deviceSig} IS NULL AND ${t.requestId} IS NOT NULL)`,
     ),
+    check('entry_payment_method', sql`(${t.type} = 'payment') = (${t.paymentMethod} IS NOT NULL)`),
     check(
       'entry_amount_by_type',
       sql`(${t.type} IN ('purchase', 'payment') AND ${t.amount} > 0)

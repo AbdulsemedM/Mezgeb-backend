@@ -32,6 +32,8 @@ import {
   changeLog,
   correctionRequest,
   dispute,
+  paymentReport,
+  paymeRequest,
   entry,
   entryLine,
   merchant,
@@ -44,6 +46,12 @@ import {
   correctionRequestView,
 } from '../ledger/correction-requests.service.js';
 import { type DisputeView, DisputesService, disputeView } from '../ledger/disputes.service.js';
+import {
+  type PaymentReportView,
+  paymentReportView,
+  type PaymeView,
+  paymeView,
+} from '../payments/payments.service.js';
 import { EntriesService } from '../ledger/entries.service.js';
 import { type EntryView, entryView, linesByEntry } from '../ledger/entry.views.js';
 import { LimitsService, type LimitView, limitView } from '../ledger/limits.service.js';
@@ -72,6 +80,9 @@ export interface SyncChanges {
   disputes: DisputeView[];
   /** Shop side only (ADR-012). */
   correction_requests: CorrectionRequestView[];
+  /** Owner and customer only (ADR-003, ADR-013). */
+  payme_requests: PaymeView[];
+  payment_reports: PaymentReportView[];
   limits: (LimitView & { account_id: string; side: 'merchant' | 'customer' })[];
   catalogue: {
     id: string;
@@ -337,6 +348,8 @@ export class SyncService {
         representatives: [],
         disputes: [],
         correction_requests: [],
+        payme_requests: [],
+        payment_reports: [],
         limits: [],
         catalogue: [],
         merchants: [],
@@ -425,6 +438,39 @@ export class SyncService {
       out.changes.correction_requests = rows
         .filter((r) => roleOf.has(r.merchantId))
         .map((r) => correctionRequestView(r.request));
+    }
+
+    // Pay-me requests and payment reports: owner and customer only (money, ADR-003).
+    const merchantOfAccount = async (accountIds: string[]) =>
+      new Map(
+        (
+          await this.db
+            .select({ id: account.id, merchantId: account.merchantId })
+            .from(account)
+            .where(inArray(account.id, accountIds))
+        ).map((r) => [r.id, r.merchantId]),
+      );
+    const paymeIds = ids('payme_request');
+    if (paymeIds.length) {
+      const rows = await this.db
+        .select()
+        .from(paymeRequest)
+        .where(inArray(paymeRequest.id, paymeIds));
+      const owners = await merchantOfAccount([...new Set(rows.map((r) => r.accountId))]);
+      out.changes.payme_requests = rows
+        .filter((r) => accountAllows(accountRole(owners.get(r.accountId)!), 'view_balance'))
+        .map(paymeView);
+    }
+    const reportIds = ids('payment_report');
+    if (reportIds.length) {
+      const rows = await this.db
+        .select()
+        .from(paymentReport)
+        .where(inArray(paymentReport.id, reportIds));
+      const owners = await merchantOfAccount([...new Set(rows.map((r) => r.accountId))]);
+      out.changes.payment_reports = rows
+        .filter((r) => accountAllows(accountRole(owners.get(r.accountId)!), 'view_balance'))
+        .map(paymentReportView);
     }
 
     // Limits: owner and customer only (ADR-003); a missing row was deleted.

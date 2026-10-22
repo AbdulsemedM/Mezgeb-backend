@@ -13,6 +13,7 @@ import { HealthModule } from './health/health.module.js';
 import { LedgerModule } from './ledger/ledger.module.js';
 import { MerchantsModule } from './merchants/merchants.module.js';
 import { OutboxModule } from './outbox/outbox.module.js';
+import { PaymentsModule } from './payments/payments.module.js';
 import { RepresentativesModule } from './representatives/representatives.module.js';
 import { StatementsModule } from './statements/statements.module.js';
 import { SyncModule } from './sync/sync.module.js';
@@ -47,6 +48,7 @@ export class AppModule {
         MerchantsModule,
         AccountsModule,
         LedgerModule,
+        PaymentsModule,
         RepresentativesModule,
         StatementsModule,
         SyncModule,

@@ -29,6 +29,7 @@ import {
   entry,
   entryLine,
   limitRaise,
+  paymeRequest,
   representative,
 } from '../db/schema.js';
 import { verifyDeviceSignature } from '../devices/device-key.js';
@@ -71,7 +72,8 @@ export class EntriesService {
   ) {}
 
   /**
-   * Records a purchase or correction with the server transaction of ADR-001: lock the account,
+   * Records a purchase, payment (ADR-013) or correction with the server transaction of ADR-001:
+   * lock the account,
    * return an existing entry unchanged, verify the signature, assign seq and hash, check limits,
    * insert, move the head and balance, queue notifications. 201 when created, 200 on retry.
    */
@@ -81,8 +83,11 @@ export class EntriesService {
     body: CreateEntry,
     mode: EntryMode,
   ): Promise<{ created: boolean; result: RecordedEntry }> {
-    const action: AccountAction =
-      body.type === 'purchase' ? 'record_purchase' : 'record_correction';
+    const action: AccountAction = {
+      purchase: 'record_purchase',
+      payment: 'record_payment',
+      correction: 'record_correction',
+    }[body.type] as AccountAction;
     if (!accountAllows(a.role, action)) throw forbidden(action);
     if (body.device_id !== auth.deviceId) {
       throw new AppError(
@@ -224,6 +229,7 @@ export class EntriesService {
           orderId: null,
           refEntryId: body.ref_entry_id ?? null,
           reason: body.reason ?? null,
+          paymentMethod: body.type === 'payment' ? body.method! : null,
           seq,
           prevHash: acct!.lastHash,
           hash,
@@ -259,12 +265,13 @@ export class EntriesService {
         .set({
           lastSeq: seq,
           lastHash: hash,
-          balanceSantim: acct!.balanceSantim + body.amount,
+          balanceSantim: acct!.balanceSantim + balanceDelta(body.type, body.amount),
           updatedAt: now,
         })
         .where(eq(account.id, acct!.id))
         .returning();
 
+      if (body.type === 'payment') await applyToPayme(tx, acct!.id, now);
       if (raiseUsed) {
         await tx
           .update(limitRaise)
@@ -312,6 +319,93 @@ export class EntriesService {
       : [];
     const byEntry = linesByEntry(lines);
     return { entries: rows.map((r) => entryView(r, byEntry.get(r.id) ?? [])) };
+  }
+
+  /**
+   * PAY-3: a payment the server records when the owner confirms a customer's report (ADR-001
+   * server-origin: no device fields, `request_id` set, the actor in the audit log). Runs inside
+   * the caller's transaction so the report and the entry change together.
+   */
+  async recordServerPayment(
+    tx: Tx,
+    a: AccountAccess,
+    p: {
+      id: string;
+      amount: number;
+      method: NonNullable<EntryRow['paymentMethod']>;
+      actorUserId: string;
+      requestId: string;
+    },
+  ): Promise<EntryRow> {
+    const [acct] = await tx
+      .select()
+      .from(account)
+      .where(eq(account.id, a.account.id))
+      .for('update');
+    const now = this.clock.now();
+    const payload = buildSigningPayload({
+      id: p.id,
+      account_id: acct!.id,
+      type: 'payment',
+      amount: p.amount,
+      recorded_at: now.toISOString(),
+    });
+    const seq = acct!.lastSeq + 1;
+    const hash = await entryHash({
+      seq,
+      prev_hash: acct!.lastHash,
+      payload_hash: await payloadHash(payload),
+      device_sig: null,
+      received_at: now.toISOString(),
+    });
+    const [inserted] = await tx
+      .insert(entry)
+      .values({
+        id: p.id,
+        accountId: acct!.id,
+        type: 'payment',
+        amount: p.amount,
+        paymentMethod: p.method,
+        seq,
+        prevHash: acct!.lastHash,
+        hash,
+        receivedAt: now,
+        origin: 'server',
+        requestId: p.requestId,
+        recordedAt: now,
+        flags: [],
+        createdAt: now,
+        createdBy: p.actorUserId,
+      })
+      .returning();
+    const [moved] = await tx
+      .update(account)
+      .set({
+        lastSeq: seq,
+        lastHash: hash,
+        balanceSantim: acct!.balanceSantim - p.amount,
+        updatedAt: now,
+      })
+      .where(eq(account.id, acct!.id))
+      .returning();
+    await applyToPayme(tx, acct!.id, now);
+    await this.audit.record(tx, {
+      actorUserId: p.actorUserId,
+      action: 'entry.create',
+      objectType: 'entry',
+      objectId: p.id,
+      after: { account_id: acct!.id, type: 'payment', amount: p.amount, seq, origin: 'server' },
+    });
+    await this.notify(
+      tx,
+      a,
+      moved!,
+      inserted!,
+      { type: 'payment', lines: [] } as unknown as CreateEntry,
+      null,
+      null,
+    );
+    return inserted!;
   }
 
   /** References in the body must point into this account and shop (malformed otherwise). */
@@ -492,6 +586,12 @@ export class EntriesService {
           await send('limit_100', 'sms.limit_100', { limit: money(limit) });
         }
       }
+    } else if (e.type === 'payment') {
+      await send('payment_recorded', 'sms.payment_recorded', {
+        amount: money(e.amount),
+        method: t(`payment_method.${e.paymentMethod!}`, language),
+        balance: money(acct.balanceSantim),
+      });
     } else {
       await send('correction_recorded', 'sms.correction', {
         amount: money(e.amount),
@@ -519,7 +619,50 @@ export class EntriesService {
   }
 }
 
-function withoutSig(body: CreateEntry): Omit<CreateEntry, 'device_sig'> {
-  const { device_sig: _sig, ...rest } = body;
+function withoutSig(body: CreateEntry): Omit<CreateEntry, 'device_sig' | 'method'> {
+  // The method is not signed (ADR-013); the payload builder ignores it, this keeps it explicit.
+  const { device_sig: _sig, method: _method, ...rest } = body;
   return rest;
+}
+
+/** Balance = Σ purchase + Σ correction − Σ payment (ADR-004). */
+export function balanceDelta(type: EntryRow['type'], amount: number): number {
+  return type === 'payment' ? -amount : amount;
+}
+
+/**
+ * PAY-5: after a payment, open pay-me requests on the account move to partially_paid, or paid
+ * once the payments recorded since each request cover its amount (oldest request first).
+ */
+async function applyToPayme(tx: Tx, accountId: string, now: Date): Promise<void> {
+  const open = await tx
+    .select()
+    .from(paymeRequest)
+    .where(
+      and(
+        eq(paymeRequest.accountId, accountId),
+        inArray(paymeRequest.status, ['sent', 'seen', 'partially_paid']),
+      ),
+    )
+    .orderBy(asc(paymeRequest.createdAt));
+  for (const p of open) {
+    const [row] = await tx
+      .select({ paid: sql<string | null>`sum(${entry.amount})` })
+      .from(entry)
+      .where(
+        and(
+          eq(entry.accountId, accountId),
+          eq(entry.type, 'payment'),
+          gte(entry.createdAt, p.createdAt),
+        ),
+      );
+    const paid = Number(row?.paid ?? 0);
+    const status = paid >= p.amount ? 'paid' : 'partially_paid';
+    if (status !== p.status) {
+      await tx
+        .update(paymeRequest)
+        .set({ status, updatedAt: now })
+        .where(eq(paymeRequest.id, p.id));
+    }
+  }
 }

@@ -160,6 +160,15 @@ Corrections and statements (ADR-012):
   `statement.pdf.ts` renders it with pdfkit and `assets/fonts/NotoSansEthiopic-*.ttf`.
   `displayDate(localDate, language, calendar)` formats dates for people.
 
+Payments (M8, ADR-013, `apps/api/src/payments/`):
+
+- Cash is `entry.create` with `type: 'payment'` and an unsigned `method` (owner only). Use
+  `balanceDelta(type, amount)` for balances. `EntriesService.recordServerPayment(tx, access, ...)`
+  writes the server-origin payment when a report is confirmed. `applyToPayme` updates pay-me
+  statuses after every payment.
+- `PaymentsService`: pay-me (with the shop's `payment_details`), reports (customer), and
+  confirm/reject (owner, online). Pay-me and reports sync to owner and customer only.
+
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 
 - `pnpm --filter @mezgeb/api db:generate` — after editing the schema, generate the next migration.

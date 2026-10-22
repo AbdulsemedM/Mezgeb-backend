@@ -76,6 +76,7 @@ describe('entry constraints', () => {
       await insert(
         purchase(a, {
           type: 'payment',
+          paymentMethod: 'telebirr',
           takenByType: null,
           origin: 'server',
           deviceId: null,
@@ -211,7 +212,15 @@ describe('entry constraints', () => {
     });
 
     it('rejects a payment with taken_by_type', async () => {
-      await rejects(purchase(a, { type: 'payment' }), 'entry_taken_by_purchase_only');
+      await rejects(
+        purchase(a, { type: 'payment', paymentMethod: 'cash' }),
+        'entry_taken_by_purchase_only',
+      );
+    });
+
+    it('rejects a payment without a method, and a method on a purchase (ADR-013)', async () => {
+      await rejects(purchase(a, { type: 'payment', takenByType: null }), 'entry_payment_method');
+      await rejects(purchase(a, { paymentMethod: 'cash' }), 'entry_payment_method');
     });
 
     it('rejects taken_by representative without a representative', async () => {
