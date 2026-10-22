@@ -27,4 +27,9 @@ export class FakeClock extends Clock {
   advance(ms: number): void {
     this.t += ms;
   }
+
+  /** Jumps to `date`, also backwards (e.g. to replay test vectors with fixed timestamps). */
+  set(date: Date): void {
+    this.t = date.getTime();
+  }
 }

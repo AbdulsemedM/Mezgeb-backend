@@ -21,10 +21,14 @@ const EXPECTED_ACCOUNT: Record<string, string> = {
   record_correction: 'O',
   request_correction: 'S',
   dispute_entry: 'C',
+  // LED-6: resolution is by correction (owner) or note
+  resolve_dispute: 'O',
   // "See all balances and totals": owner yes, staff no, customer own account only
   view_balance: 'OC',
   view_statement: 'OC',
   // "Set merchant-side limits" / "Set customer-side limits"
+  // ADR-003: staff cannot see limits
+  view_limits: 'OC',
   set_merchant_limit: 'O',
   set_customer_limit: 'C',
   // "Add or revoke representatives": customer only; the picker is visible to the shop
@@ -52,6 +56,8 @@ const EXPECTED_ACCOUNT: Record<string, string> = {
 const EXPECTED_MERCHANT: Record<string, string> = {
   // "Onboard customer": owner, staff
   create_account: 'OS',
+  // LED-4: the counter needs the catalogue
+  view_catalogue: 'OS',
   // ADR-003: staff cannot manage staff; detail-mode shop default is the owner's
   manage_staff: 'O',
   update_shop: 'O',

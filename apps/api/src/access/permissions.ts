@@ -17,6 +17,10 @@ export const ACCOUNT_PERMISSIONS = {
   record_correction: ['owner'],
   request_correction: ['staff'],
   dispute_entry: ['customer'],
+  /** Resolve by a correction or a note (LED-6); corrections are owner-only. */
+  resolve_dispute: ['owner'],
+  /** ADR-003: staff cannot see limits or balances. */
+  view_limits: ['owner', 'customer'],
   set_merchant_limit: ['owner'],
   set_customer_limit: ['customer'],
   /** The merchant's picker needs the active representatives (REP-4). */
@@ -39,6 +43,8 @@ export const MERCHANT_PERMISSIONS = {
   update_shop: ['owner'],
   manage_staff: ['owner'],
   create_account: ['owner', 'staff'],
+  /** Item suggestions and last prices at the counter (LED-4). */
+  view_catalogue: ['owner', 'staff'],
 } as const satisfies Record<string, readonly MerchantRole[]>;
 
 export type AccountAction = keyof typeof ACCOUNT_PERMISSIONS;

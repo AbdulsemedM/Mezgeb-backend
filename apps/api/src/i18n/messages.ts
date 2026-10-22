@@ -17,6 +17,43 @@ const messages = {
     am: '{shop} በመዝገብ ላይ አክሎዎታል፤ የጋራ የዱቤ ደብተርዎ ነው። እያንዳንዱን ግዢና ቀሪ ሂሳብዎን ይመልከቱ፦ {link}',
     om: '{shop} Mezgeb irratti isin dabaleera, kitaaba dube keessan kan waliinii. Bittaa hundaafi haftee keessan ilaalaa: {link}',
   },
+  // Notifications matrix: "Purchase recorded" — items, amount, who took it, new balance.
+  'sms.purchase': {
+    en: '{shop}: {amount} on your dube ({items}), taken by {who}. New balance: {balance}.',
+    am: '{shop}፦ {amount} በዱቤዎ ተመዝግቧል ({items})፣ የወሰደው {who}። አዲስ ቀሪ ሂሳብ፦ {balance}።',
+    om: '{shop}: {amount} dube keessan irratti galmeeffameera ({items}), kan fudhate {who}. Haftee haaraa: {balance}.',
+  },
+  'who.customer': { en: 'you', am: 'እርስዎ', om: 'isin' },
+  'who.delivery': { en: 'delivery', am: 'በማድረስ', om: 'geejjiba' },
+  // "Correction recorded" — what changed and why.
+  'sms.correction': {
+    en: '{shop} corrected your dube by {amount}: {reason}. New balance: {balance}.',
+    am: '{shop} ዱቤዎን በ{amount} አስተካክሏል፦ {reason}። አዲስ ቀሪ ሂሳብ፦ {balance}።',
+    om: '{shop} dube keessan {amount}n sirreesseera: {reason}. Haftee haaraa: {balance}.',
+  },
+  // "Limit override used" — alert with reason.
+  'sms.limit_override': {
+    en: '{shop} sold over your dube limit. Reason given: {reason}.',
+    am: '{shop} ከዱቤ ገደብዎ በላይ ሸጧል። የተሰጠው ምክንያት፦ {reason}።',
+    om: '{shop} daangaa dube keessanii ol gurgureera. Sababni kenname: {reason}.',
+  },
+  // "Limit 80% / 100% reached".
+  'sms.limit_80': {
+    en: '{shop}: your dube balance has reached 80% of the {limit} limit.',
+    am: '{shop}፦ የዱቤ ቀሪ ሂሳብዎ ከ{limit} ገደብ 80% ደርሷል።',
+    om: '{shop}: hafteen dube keessanii daangaa {limit} keessaa 80% ga’eera.',
+  },
+  'sms.limit_100': {
+    en: '{shop}: your dube balance has reached 100% of the {limit} limit.',
+    am: '{shop}፦ የዱቤ ቀሪ ሂሳብዎ ከ{limit} ገደብ 100% ደርሷል።',
+    om: '{shop}: hafteen dube keessanii daangaa {limit} keessaa 100% ga’eera.',
+  },
+  // "Entry disputed" — to the merchant (push from M10; SMS until then).
+  'sms.dispute': {
+    en: '{customer} disputed a {amount} entry: {reason}. Open Mezgeb to resolve it.',
+    am: '{customer} የ{amount} መዝገብን ተቃውመዋል፦ {reason}። ለመፍታት መዝገብን ይክፈቱ።',
+    om: '{customer} galmee {amount} mormaniiru: {reason}. Furuuf Mezgeb banaa.',
+  },
 } as const satisfies Record<string, Record<Language, string>>;
 
 export type MessageKey = keyof typeof messages;

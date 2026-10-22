@@ -6,6 +6,7 @@ export * from './schemas/auth.js';
 export * from './uuid.js';
 export * from './ecdsa.js';
 export * from './schemas/merchants.js';
+export * from './schemas/entries.js';
 export * from './money.js';
 export * from './jcs.js';
 export * from './hash.js';

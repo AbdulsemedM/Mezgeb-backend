@@ -91,7 +91,7 @@ export class AccessService {
   }
 }
 
-function forbidden(action: string): AppError {
+export function forbidden(action: string): AppError {
   return new AppError(
     'forbidden_for_role',
     'Your role on this account does not allow this action',

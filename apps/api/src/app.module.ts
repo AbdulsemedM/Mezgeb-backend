@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { CommonModule } from './common/common.module.js';
 import { DevicesModule } from './devices/devices.module.js';
 import { HealthModule } from './health/health.module.js';
+import { LedgerModule } from './ledger/ledger.module.js';
 import { MerchantsModule } from './merchants/merchants.module.js';
 import { OutboxModule } from './outbox/outbox.module.js';
 import { UsersModule } from './users/users.module.js';
@@ -42,6 +43,7 @@ export class AppModule {
         OutboxModule,
         MerchantsModule,
         AccountsModule,
+        LedgerModule,
         ...(DEV_ROUTES ? [DevModule] : []),
       ],
     };

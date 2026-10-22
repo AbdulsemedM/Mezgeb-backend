@@ -108,6 +108,23 @@ Shared core (M4, `packages/shared`; ADR-007):
 - Every behaviour has JSON cases in `packages/shared/test-vectors/` for the Dart port. Add a case
   there, not only in a TS test. `signing.json` is generated: `node packages/shared/scripts/gen-signing-vectors.mjs`.
 
+Ledger (M5, `apps/api/src/ledger/`; ADR-008):
+
+- `EntriesService.record(access, auth, body, 'online' | 'offline')` is the only way an entry is
+  written: the ADR-001 transaction (row lock, idempotent on id + signature, signature by the
+  caller's own device, seq/hash, limits and flags, head + cached balance, catalogue learning,
+  audit, SMS). REST is `online` (limits can refuse: `limit_override_required`, `limit_hard_stop`);
+  sync (M7) must call it with `offline` (never refused, only flagged).
+- Signed text fields are validated, never transformed (no `.trim()` in their zod schema): the
+  server must verify the exact bytes the device signed. Bodies: `packages/shared/src/schemas/entries.ts`.
+- `chain.ts`: `payloadOf(row, lines)` rebuilds the signing payload from stored rows;
+  `verifyAccountChain` (also `pnpm --filter @mezgeb/api db:verify-chains [since]`).
+- Limits: `limitsInputFor(db, account, amount, now)` builds the engine input from the database;
+  `PUT/DELETE /v1/accounts/:id/limits/:side`, `GET /v1/accounts/:id/limits`.
+- Test helpers in `test/setup/ledger.ts`: `purchaseBody`/`correctionBody` (signed with the test
+  user's device key), `postEntry`, `buy`; `signEntry` to sign any body. `smsTo(t, phone)` joins every
+  SMS to a phone (order within one outbox run is not defined). `t.clock.set(date)` jumps the clock.
+
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 
 - `pnpm --filter @mezgeb/api db:generate` — after editing the schema, generate the next migration.

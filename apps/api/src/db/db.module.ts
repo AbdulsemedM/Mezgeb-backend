@@ -19,7 +19,10 @@ export type Db = NodePgDatabase<typeof schema>;
       useFactory: (config: AppConfig) => {
         const pool = new pg.Pool({
           connectionString: config.DATABASE_URL,
-          connectionTimeoutMillis: 2_000,
+          // Entry writes hold a connection while they wait for the account row lock (ADR-001),
+          // so a burst on one busy account queues for connections: allow room and time.
+          max: 20,
+          connectionTimeoutMillis: 10_000,
         });
         // An idle client losing its connection must not crash the process.
         const logger = new Logger('PgPool');

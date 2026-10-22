@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node --env-file-if-exists=../../.env dist/db/migrate.cli.js"
+    "db:migrate": "node --env-file-if-exists=../../.env dist/db/migrate.cli.js",
+    "db:verify-chains": "node --env-file-if-exists=../../.env dist/ledger/verify-chains.cli.js"
   },
   "dependencies": {
     "@mezgeb/shared": "workspace:*",

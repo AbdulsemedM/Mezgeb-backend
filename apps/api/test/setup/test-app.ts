@@ -36,6 +36,7 @@ export interface TestApp {
   get<T = any>(path: string, opts?: RequestOptions): Promise<ApiResponse<T>>;
   post<T = any>(path: string, body?: unknown, opts?: RequestOptions): Promise<ApiResponse<T>>;
   patch<T = any>(path: string, body: unknown, opts?: RequestOptions): Promise<ApiResponse<T>>;
+  put<T = any>(path: string, body: unknown, opts?: RequestOptions): Promise<ApiResponse<T>>;
   delete<T = any>(path: string, opts?: RequestOptions): Promise<ApiResponse<T>>;
   close(): Promise<void>;
 }
@@ -120,6 +121,7 @@ export async function startTestApp(
     get: (path, o) => call('GET', path, undefined, o),
     post: (path, body, o) => call('POST', path, body ?? {}, o),
     patch: (path, body, o) => call('PATCH', path, body, o),
+    put: (path, body, o) => call('PUT', path, body, o),
     delete: (path, o) => call('DELETE', path, undefined, o),
     async close() {
       if (closed) return;
@@ -129,4 +131,12 @@ export async function startTestApp(
       await container?.stop().catch(() => undefined);
     },
   };
+}
+
+/** Every SMS sent to `phone` so far, joined; the order within one outbox run is not defined. */
+export function smsTo(t: TestApp, phone: string): string {
+  return t.sms.sent
+    .filter((m) => m.to === phone)
+    .map((m) => m.text)
+    .join('\n');
 }
