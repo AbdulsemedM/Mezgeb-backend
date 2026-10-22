@@ -58,6 +58,8 @@ Node 22, pnpm 10 (no Bun). Docker must be running for integration tests and loca
   9000 (console 9001, bucket `mezgeb-dev`).
 - `pnpm --filter @mezgeb/api dev` — builds `@mezgeb/shared`, then runs the API in watch mode on
   :3000, reading `../../.env`. The console SMS gateway logs OTP codes there.
+  With `DEV_ROUTES=true` (allowed only in development) `GET /v1/dev/otp?phone=` returns the last
+  code sent to a phone, for the mobile app's on-device integration test (`apps/api/src/dev/`).
 - `pnpm test` — all Vitest suites; API integration tests start their own Postgres via Testcontainers.
 - `pnpm --filter @mezgeb/api exec vitest run test/health.int.test.ts` — a single test file.
 - `pnpm lint`, `pnpm typecheck`, `pnpm format` / `pnpm format:check`, `pnpm build`.

@@ -34,6 +34,17 @@ describe('parseEnv', () => {
     expect(parseEnv({ ...valid, TRUST_PROXY: 'true' }).TRUST_PROXY).toBe(true);
   });
 
+  it('DEV_ROUTES defaults to false and is allowed only in development', () => {
+    expect(parseEnv(valid).DEV_ROUTES).toBe(false);
+    expect(parseEnv({ ...valid, DEV_ROUTES: 'true' }).DEV_ROUTES).toBe(true);
+    expect(() => parseEnv({ ...valid, NODE_ENV: 'production', DEV_ROUTES: 'true' })).toThrow(
+      /DEV_ROUTES/,
+    );
+    expect(() => parseEnv({ ...valid, NODE_ENV: 'test', DEV_ROUTES: 'true' })).toThrow(
+      /DEV_ROUTES/,
+    );
+  });
+
   it('fails on a non-numeric PORT', () => {
     expect(() => parseEnv({ ...valid, PORT: 'abc' })).toThrow(/PORT/);
   });
