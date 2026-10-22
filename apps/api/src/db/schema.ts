@@ -58,6 +58,8 @@ export const entryFlag = pgEnum('entry_flag', [
   'over_hard_stop',
   'rep_revoked',
   'pending_acceptance',
+  // Offline entry attributed to a representative who was paused (M6; ADR-003 covers revoked).
+  'rep_paused',
 ]);
 export const lineSource = pgEnum('line_source', ['manual', 'photo', 'order']);
 export const paymentMethod = pgEnum('payment_method', [
@@ -338,6 +340,12 @@ export const representative = pgTable(
     limitPeriodType: periodType('limit_period_type'),
     limitPeriodDays: integer('limit_period_days'),
     limitCalendar: calendar('limit_calendar'),
+    /** Addis local date the own limit was set: its periods roll from here (ADR-007). */
+    limitSetAt: date('limit_set_at', { mode: 'string' }),
+    /** REP-5: SMS receipt to the representative after each entry (opt-in, needs a phone). */
+    smsReceipt: boolean('sms_receipt').notNull().default(false),
+    /** REP-6: wrong PIN tries in a row; 5 locks the PIN until the customer sets a new one. */
+    pinFailedAttempts: integer('pin_failed_attempts').notNull().default(0),
     createdAt: createdAt(),
     createdBy: createdBy(),
     deviceId: deviceId(),
@@ -350,6 +358,11 @@ export const representative = pgTable(
       'representative_custom_days',
       sql`(${t.limitPeriodType} IS NOT DISTINCT FROM 'custom_days') = (${t.limitPeriodDays} IS NOT NULL) AND (${t.limitPeriodDays} IS NULL OR ${t.limitPeriodDays} > 0)`,
     ),
+    check(
+      'representative_limit_anchor',
+      sql`(${t.limitValue} IS NULL) = (${t.limitSetAt} IS NULL)`,
+    ),
+    check('representative_receipt_phone', sql`NOT ${t.smsReceipt} OR ${t.phone} IS NOT NULL`),
     check(
       'representative_monthly_calendar',
       sql`(${t.limitPeriodType} IS NOT DISTINCT FROM 'monthly') = (${t.limitCalendar} IS NOT NULL)`,

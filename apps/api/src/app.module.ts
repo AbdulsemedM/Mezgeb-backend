@@ -13,6 +13,7 @@ import { HealthModule } from './health/health.module.js';
 import { LedgerModule } from './ledger/ledger.module.js';
 import { MerchantsModule } from './merchants/merchants.module.js';
 import { OutboxModule } from './outbox/outbox.module.js';
+import { RepresentativesModule } from './representatives/representatives.module.js';
 import { UsersModule } from './users/users.module.js';
 
 @Module({})
@@ -44,6 +45,7 @@ export class AppModule {
         MerchantsModule,
         AccountsModule,
         LedgerModule,
+        RepresentativesModule,
         ...(DEV_ROUTES ? [DevModule] : []),
       ],
     };

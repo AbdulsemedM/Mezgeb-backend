@@ -29,6 +29,13 @@
       "when": 1792602817837,
       "tag": "0003_merchants_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792670297004,
+      "tag": "0004_representatives",
+      "breakpoints": true
     }
   ]
 }

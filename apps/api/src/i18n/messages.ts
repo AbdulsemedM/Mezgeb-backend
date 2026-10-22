@@ -48,6 +48,35 @@ const messages = {
     am: '{shop}፦ የዱቤ ቀሪ ሂሳብዎ ከ{limit} ገደብ 100% ደርሷል።',
     om: '{shop}: hafteen dube keessanii daangaa {limit} keessaa 100% ga’eera.',
   },
+  // Pilot kit "Purchase (representative receipt)" (REP-5, opt-in).
+  'sms.rep_receipt': {
+    en: '{shop}: {items} = {amount} recorded for {customer}.',
+    am: '{shop}፦ {items} = {amount} ለ{customer} ተመዝግቧል።',
+    om: '{shop}: {items} = {amount} {customer}f galmeeffameera.',
+  },
+  // ADR-003: an offline entry named a representative the customer had removed or paused.
+  'sms.rep_inactive_entry': {
+    en: '{shop}: {amount} was recorded as taken by {name}, whom you removed or paused. Check it in Mezgeb.',
+    am: '{shop}፦ {amount} በ{name} እንደተወሰደ ተመዝግቧል፤ {name} ከዝርዝርዎ ተሰርዟል ወይም ቆሟል። በመዝገብ ይመልከቱ።',
+    om: '{shop}: {amount} akka {name}n fudhatametti galmeeffameera; {name} haqameera ykn dhaabbateera. Mezgeb keessatti ilaalaa.',
+  },
+  // Notifications matrix: representative's own limit.
+  'sms.rep_limit': {
+    en: '{shop}: {name} has reached the {limit} limit you set.',
+    am: '{shop}፦ {name} ያስቀመጡትን የ{limit} ገደብ ደርሰዋል።',
+    om: '{shop}: {name} daangaa {limit} isin kaa’ettan ga’eera.',
+  },
+  // "Representative added or revoked" — change notice to the merchant.
+  'sms.rep_added': {
+    en: '{customer} added {name}, who may now take goods on their dube.',
+    am: '{customer} {name}ን አክለዋል፤ አሁን በዱቤያቸው ዕቃ መውሰድ ይችላሉ።',
+    om: '{customer} {name} dabalaniiru; amma dube isaanii irratti meeshaa fudhachuu danda’u.',
+  },
+  'sms.rep_revoked': {
+    en: '{customer} removed {name}. Do not give goods to {name} on their dube any more.',
+    am: '{customer} {name}ን አስወግደዋል። ከዚህ በኋላ ለ{name} በዱቤያቸው ዕቃ አይስጡ።',
+    om: '{customer} {name} haqaniiru. Kana booda dube isaanii irratti {name}f meeshaa hin kenninaa.',
+  },
   // "Entry disputed" — to the merchant (push from M10; SMS until then).
   'sms.dispute': {
     en: '{customer} disputed a {amount} entry: {reason}. Open Mezgeb to resolve it.',

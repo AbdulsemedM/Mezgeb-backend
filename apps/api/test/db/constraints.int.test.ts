@@ -200,7 +200,27 @@ describe('schema constraints', () => {
       });
 
     it('accepts an own limit of 1,500 per month', async () => {
-      await rep({ limitValue: 150_000, limitPeriodType: 'monthly', limitCalendar: 'gregorian' });
+      await rep({
+        limitValue: 150_000,
+        limitPeriodType: 'monthly',
+        limitCalendar: 'gregorian',
+        limitSetAt: '2026-10-22',
+      });
+    });
+
+    it('rejects a limit without the day it was set, and an anchor without a limit (M6)', async () => {
+      expect((await pgError(() => rep({ limitValue: 150_000 }))).constraint).toBe(
+        'representative_limit_anchor',
+      );
+      expect((await pgError(() => rep({ limitSetAt: '2026-10-22' }))).constraint).toBe(
+        'representative_limit_anchor',
+      );
+    });
+
+    it('rejects an SMS receipt without a phone (REP-5)', async () => {
+      expect((await pgError(() => rep({ smsReceipt: true }))).constraint).toBe(
+        'representative_receipt_phone',
+      );
     });
 
     it('defaults to active and not allowed to order', async () => {

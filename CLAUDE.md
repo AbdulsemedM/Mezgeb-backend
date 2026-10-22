@@ -125,6 +125,15 @@ Ledger (M5, `apps/api/src/ledger/`; ADR-008):
   user's device key), `postEntry`, `buy`; `signEntry` to sign any body. `smsTo(t, phone)` joins every
   SMS to a phone (order within one outbox run is not defined). `t.clock.set(date)` jumps the clock.
 
+Representatives (M6, `apps/api/src/representatives/`; ADR-009):
+
+- Customer-only management (`manage_representatives`); routes on `/v1/representatives/:id` load the
+  row, then `AccessService.requireAccount` on its account. Shop views (`shopView`) never contain the
+  phone or PIN; the shop's list shows active representatives only.
+- In `EntriesService.record`, an inactive representative is refused online and flagged offline
+  (`rep_revoked` / `rep_paused`); their own limit goes into the engine through `limitsInputFor(...,
+  rep)` (rolling window from `limit_set_at`).
+
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 
 - `pnpm --filter @mezgeb/api db:generate` — after editing the schema, generate the next migration.

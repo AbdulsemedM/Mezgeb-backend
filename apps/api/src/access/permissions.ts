@@ -26,6 +26,8 @@ export const ACCOUNT_PERMISSIONS = {
   /** The merchant's picker needs the active representatives (REP-4). */
   view_representatives: ['owner', 'staff', 'customer'],
   manage_representatives: ['customer'],
+  /** REP-6: the shop checks a representative's PIN at the counter (online only). */
+  verify_representative_pin: ['owner', 'staff'],
   send_payme: ['owner'],
   report_payment: ['customer'],
   review_payment: ['owner'],

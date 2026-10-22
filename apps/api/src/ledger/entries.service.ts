@@ -40,6 +40,7 @@ import { limitsInputFor } from './limits.service.js';
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 type AccountRow = typeof account.$inferSelect;
 type EntryFlag = EntryRow['flags'][number];
+type RepresentativeRow = typeof representative.$inferSelect;
 
 /**
  * Where an entry comes from (ADR-008). Online entries can be refused by the limits engine;
@@ -138,14 +139,26 @@ export class EntriesService {
         );
       }
 
-      await this.checkReferences(tx, acct!, body);
+      const rep = await this.checkReferences(tx, acct!, body);
 
       // 4–8. Limits and flags, then the chain position.
       const now = this.clock.now();
       const flags: EntryFlag[] = [];
+      // M6: a paused or revoked representative is refused online, only flagged offline (ADR-003).
+      if (rep && rep.status !== 'active') {
+        if (mode === 'online') {
+          throw new AppError(
+            'representative_inactive',
+            'This representative was paused or removed by the customer',
+            HttpStatus.CONFLICT,
+            { status: rep.status },
+          );
+        }
+        flags.push(rep.status === 'revoked' ? 'rep_revoked' : 'rep_paused');
+      }
       let limits: LimitsResult | null = null;
       if (body.type === 'purchase') {
-        limits = evaluateLimits(await limitsInputFor(tx, acct!, body.amount, now));
+        limits = evaluateLimits(await limitsInputFor(tx, acct!, body.amount, now, rep));
         if (limits.flags.includes('over_hard_stop')) {
           if (mode === 'online') {
             throw new AppError(
@@ -248,7 +261,7 @@ export class EntriesService {
         after: { account_id: acct!.id, type: body.type, amount: body.amount, seq, flags },
       });
       // 10. Notifications to the outbox.
-      await this.notify(tx, a, moved!, inserted!, body, limits);
+      await this.notify(tx, a, moved!, inserted!, body, limits, rep);
 
       return { created: true, result: await this.result(tx, a, moved!, inserted!, limits) };
     });
@@ -283,7 +296,11 @@ export class EntriesService {
   }
 
   /** References in the body must point into this account and shop (malformed otherwise). */
-  private async checkReferences(tx: Tx, acct: AccountRow, body: CreateEntry): Promise<void> {
+  private async checkReferences(
+    tx: Tx,
+    acct: AccountRow,
+    body: CreateEntry,
+  ): Promise<RepresentativeRow | null> {
     if (body.ref_entry_id) {
       const [ref] = await tx
         .select({ accountId: entry.accountId })
@@ -297,9 +314,10 @@ export class EntriesService {
         );
       }
     }
+    let rep: RepresentativeRow | null = null;
     if (body.representative_id) {
-      const [rep] = await tx
-        .select({ accountId: representative.accountId })
+      [rep = null] = await tx
+        .select()
         .from(representative)
         .where(eq(representative.id, body.representative_id));
       if (rep?.accountId !== acct.id) {
@@ -326,6 +344,7 @@ export class EntriesService {
         );
       }
     }
+    return rep;
   }
 
   /**
@@ -381,6 +400,7 @@ export class EntriesService {
     e: EntryRow,
     body: CreateEntry,
     limits: LimitsResult | null,
+    rep: RepresentativeRow | null,
   ): Promise<void> {
     if (acct.status !== 'active') return;
     const [customer] = await tx.select().from(appUser).where(eq(appUser.id, acct.customerUserId));
@@ -404,19 +424,43 @@ export class EntriesService {
     if (e.type === 'purchase') {
       let who = t('who.customer', language);
       if (e.takenByType === 'delivery') who = t('who.delivery', language);
-      if (e.representativeId) {
-        const [rep] = await tx
-          .select({ name: representative.name })
-          .from(representative)
-          .where(eq(representative.id, e.representativeId));
-        who = rep?.name ?? who;
-      }
+      if (rep) who = rep.name;
+      const items = body.lines.map((l) => l.name).join(', ') || '—';
       await send('purchase_recorded', 'sms.purchase', {
         amount: money(e.amount),
-        items: body.lines.map((l) => l.name).join(', ') || '—',
+        items,
         who,
         balance: money(acct.balanceSantim),
       });
+      if (rep && (e.flags.includes('rep_revoked') || e.flags.includes('rep_paused'))) {
+        await send('representative_inactive_entry', 'sms.rep_inactive_entry', {
+          amount: money(e.amount),
+          name: rep.name,
+        });
+      }
+      const repLimit = limits?.representative;
+      if (rep && repLimit?.crossed.includes('100')) {
+        await send('representative_limit', 'sms.rep_limit', {
+          name: rep.name,
+          limit: money(repLimit.limit),
+        });
+      }
+      // REP-5: the representative's own receipt, if the customer turned it on.
+      if (rep?.smsReceipt && rep.phone) {
+        await this.outbox.enqueueSms(tx, {
+          userId: null,
+          phone: rep.phone,
+          event: 'representative_receipt',
+          template: 'sms.rep_receipt',
+          params: {
+            shop: a.merchant.shopName,
+            items,
+            amount: money(e.amount),
+            customer: customer.name ?? customer.phone,
+          },
+          language,
+        });
+      }
       if (e.flags.includes('over_limit_override') && e.reason) {
         await send('limit_override_used', 'sms.limit_override', { reason: e.reason });
       }

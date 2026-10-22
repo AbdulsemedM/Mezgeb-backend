@@ -5,17 +5,21 @@ import {
   type LimitsInput,
   type LimitsResult,
   ledgerState,
+  localDate,
+  type RepresentativeLimit,
+  rollingWindow,
+  startOfLocalDay,
   type SetLimit,
   type SideLimit,
 } from '@mezgeb/shared';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, gte, lt, sql } from 'drizzle-orm';
 import { type AccountAccess, forbidden } from '../access/access.service.js';
 import { accountAllows } from '../access/permissions.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AppError } from '../common/app-error.js';
 import { Clock } from '../common/clock.js';
 import { DB, type Db } from '../db/db.module.js';
-import { type account, accountLimit, appUser, entry } from '../db/schema.js';
+import { type account, accountLimit, appUser, entry, type representative } from '../db/schema.js';
 
 type LimitRow = typeof accountLimit.$inferSelect;
 type Reader = Pick<Db, 'select'>;
@@ -69,6 +73,7 @@ export async function limitsInputFor(
   acct: typeof account.$inferSelect,
   amount: number,
   now: Date,
+  rep: typeof representative.$inferSelect | null = null,
 ): Promise<LimitsInput> {
   const rows = await db.select().from(accountLimit).where(eq(accountLimit.accountId, acct.id));
   const ledger = await db
@@ -87,12 +92,43 @@ export async function limitsInputFor(
   return {
     merchant: sideLimit(rows.find((r) => r.setBy === 'merchant')),
     customer: sideLimit(rows.find((r) => r.setBy === 'customer')),
-    representative: null,
+    representative: await representativeLimit(db, rep, now),
     openBalance: acct.balanceSantim,
     periodStart,
     amount,
     now,
   };
+}
+
+/**
+ * A representative's own limit and what they took in the current rolling period, counted from
+ * the day the limit was set (REP-2, ADR-007). Null without a limit.
+ */
+async function representativeLimit(
+  db: Reader,
+  rep: typeof representative.$inferSelect | null,
+  now: Date,
+): Promise<RepresentativeLimit | null> {
+  if (!rep || rep.limitValue === null || rep.limitPeriodType === null || !rep.limitSetAt) {
+    return null;
+  }
+  const window = rollingWindow(
+    rep.limitSetAt,
+    { type: rep.limitPeriodType, days: rep.limitPeriodDays, calendar: rep.limitCalendar },
+    localDate(now),
+  );
+  const [row] = await db
+    .select({ spent: sql<string | null>`sum(${entry.amount})` })
+    .from(entry)
+    .where(
+      and(
+        eq(entry.representativeId, rep.id),
+        eq(entry.type, 'purchase'),
+        gte(entry.recordedAt, startOfLocalDay(window.start)),
+        lt(entry.recordedAt, startOfLocalDay(window.end)),
+      ),
+    );
+  return { value: rep.limitValue, spentInPeriod: Number(row?.spent ?? 0) };
 }
 
 /** LIM-1: each side sets its own limit (ADR-008). */

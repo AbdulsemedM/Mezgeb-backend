@@ -33,6 +33,8 @@ const EXPECTED_ACCOUNT: Record<string, string> = {
   set_customer_limit: 'C',
   // "Add or revoke representatives": customer only; the picker is visible to the shop
   manage_representatives: 'C',
+  // REP-6: the counter asks for the PIN
+  verify_representative_pin: 'OS',
   view_representatives: 'OSC',
   // "Send pay-me request": owner; "Report payment": customer; "Confirm or reject": owner
   send_payme: 'O',
