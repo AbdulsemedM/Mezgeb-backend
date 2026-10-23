@@ -71,6 +71,22 @@ export class DevicesService {
     return this.db.select().from(device).where(eq(device.userId, userId)).orderBy(device.createdAt);
   }
 
+  /**
+   * ADR-015: the push token of the caller's device. A token moves to the newest device that
+   * reports it (the same phone signing in again), so a push never goes to two accounts.
+   */
+  async setPushToken(userId: string, deviceId: string, token: string | null): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      if (token) {
+        await tx.update(device).set({ pushToken: null }).where(eq(device.pushToken, token));
+      }
+      await tx
+        .update(device)
+        .set({ pushToken: token })
+        .where(and(eq(device.id, deviceId), eq(device.userId, userId)));
+    });
+  }
+
   /** Revokes the caller's own device and every refresh token bound to it. Idempotent. */
   async revoke(userId: string, deviceId: string): Promise<void> {
     await this.db.transaction(async (tx) => {

@@ -187,7 +187,8 @@ export class DisputesService {
       .from(appUser)
       .where(eq(appUser.id, a.account.customerUserId));
     if (!owner || !customer) return;
-    await this.outbox.enqueueSms(tx, {
+    await this.outbox.notify(tx, {
+      merchantId: a.merchant.id,
       userId: owner.id,
       phone: owner.phone,
       event: 'entry_disputed',

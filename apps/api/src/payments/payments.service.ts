@@ -140,7 +140,8 @@ export class PaymentsService {
         .where(eq(appUser.id, a.account.customerUserId));
       const lang = customer!.language;
       const calendar = customer!.calendarPref ?? 'ethiopian';
-      await this.outbox.enqueueSms(tx, {
+      await this.outbox.notify(tx, {
+        merchantId: a.merchant.id,
         userId: customer!.id,
         phone: customer!.phone,
         event: 'payme_sent',
@@ -225,7 +226,8 @@ export class PaymentsService {
         .select()
         .from(appUser)
         .where(eq(appUser.id, a.account.customerUserId));
-      await this.outbox.enqueueSms(tx, {
+      await this.outbox.notify(tx, {
+        merchantId: a.merchant.id,
         userId: owner!.id,
         phone: owner!.phone,
         event: 'payment_reported',
@@ -324,7 +326,8 @@ export class PaymentsService {
         .select()
         .from(appUser)
         .where(eq(appUser.id, a.account.customerUserId));
-      await this.outbox.enqueueSms(tx, {
+      await this.outbox.notify(tx, {
+        merchantId: a.merchant.id,
         userId: customer!.id,
         phone: customer!.phone,
         event: 'payment_rejected',

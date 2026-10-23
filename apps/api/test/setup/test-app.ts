@@ -1,3 +1,5 @@
+import { RemindersService } from '../../src/ledger/reminders.service.js';
+import { FakePushSender, PushSender } from '../../src/push/push-sender.js';
 import 'reflect-metadata';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -29,6 +31,10 @@ export interface TestApp {
   sms: ConsoleSmsGateway;
   /** The outbox dispatcher; polling is off in tests, call `runOnce()`. */
   outbox: OutboxDispatcher;
+  /** In-memory push (ADR-015): pushes go here once a device has a token. */
+  push: FakePushSender;
+  /** Scheduled reminders; the timer is off in tests, call `runOnce()`. */
+  reminders: RemindersService;
   /** Direct DB access; unset with `ownContainer`. */
   db?: TestDb;
   /** Set only with `ownContainer: true`, for tests that need to stop the database. */
@@ -54,6 +60,7 @@ export const TEST_ENV = {
   TRUST_PROXY: 'true',
   PUBLIC_WEB_URL: 'http://localhost:5173',
   OUTBOX_POLL_MS: '0',
+  REMINDERS_INTERVAL_MS: '0',
 };
 
 /**
@@ -61,7 +68,7 @@ export const TEST_ENV = {
  * and the in-memory SMS gateway. `ownContainer` starts a dedicated Postgres instead.
  */
 export async function startTestApp(
-  opts: { ownContainer?: boolean; imports?: any[] } = {},
+  opts: { ownContainer?: boolean; imports?: any[]; env?: Record<string, string> } = {},
 ): Promise<TestApp> {
   let databaseUrl: string;
   let container: StartedPostgreSqlContainer | undefined;
@@ -80,9 +87,10 @@ export async function startTestApp(
 
   const clock = new FakeClock();
   const sms = new ConsoleSmsGateway();
+  const push = new FakePushSender();
   const moduleRef = await Test.createTestingModule({
     imports: [
-      AppModule.forRoot({ ...TEST_ENV, DATABASE_URL: databaseUrl }),
+      AppModule.forRoot({ ...TEST_ENV, ...opts.env, DATABASE_URL: databaseUrl }),
       ...(opts.imports ?? []),
     ],
   })
@@ -90,6 +98,8 @@ export async function startTestApp(
     .useValue(clock)
     .overrideProvider(SmsGateway)
     .useValue(sms)
+    .overrideProvider(PushSender)
+    .useValue(push)
     .compile();
   const app = configureApp(moduleRef.createNestApplication());
   await app.listen(0, '127.0.0.1');
@@ -116,6 +126,8 @@ export async function startTestApp(
     clock,
     sms,
     outbox: app.get(OutboxDispatcher),
+    push,
+    reminders: app.get(RemindersService),
     db: testDb,
     container,
     get: (path, o) => call('GET', path, undefined, o),

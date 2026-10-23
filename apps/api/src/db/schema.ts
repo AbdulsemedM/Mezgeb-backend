@@ -156,6 +156,8 @@ export const device = pgTable(
     /** ECDSA P-256 public key, SPKI, base64 (ADR-001). */
     publicKey: text('public_key').notNull(),
     label: text('label'),
+    /** M10: the FCM registration token of the app on this device, if it gave one (ADR-015). */
+    pushToken: text('push_token'),
     createdAt: createdAt(),
     revokedAt: ts('revoked_at'),
   },
@@ -664,6 +666,8 @@ export const notification = pgTable(
     /** App user, or null for a representative reached by SMS only. */
     userId: uuid('user_id').references(() => appUser.id),
     phone: text('phone'),
+    /** The shop the notice is about: its plan caps SMS (ADR-015). */
+    merchantId: uuid('merchant_id'),
     event: text('event').notNull(),
     payload: jsonb('payload')
       .notNull()
@@ -680,6 +684,7 @@ export const notification = pgTable(
   (t) => [
     index('notification_due_idx').on(t.status, t.scheduledFor),
     index('notification_user_idx').on(t.userId),
+    index('notification_merchant_idx').on(t.merchantId, t.channel, t.createdAt),
     check('notification_recipient', sql`${t.userId} IS NOT NULL OR ${t.phone} IS NOT NULL`),
   ],
 );

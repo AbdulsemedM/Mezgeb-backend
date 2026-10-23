@@ -16,6 +16,7 @@ import { and, asc, eq, gte, lt, sql } from 'drizzle-orm';
 import { type AccountAccess, forbidden } from '../access/access.service.js';
 import { accountAllows } from '../access/permissions.js';
 import { AuditService } from '../audit/audit.service.js';
+import { OutboxService } from '../outbox/outbox.service.js';
 import { AppError } from '../common/app-error.js';
 import { Clock } from '../common/clock.js';
 import { DB, type Db } from '../db/db.module.js';
@@ -138,6 +139,7 @@ export class LimitsService {
     @Inject(DB) private readonly db: Db,
     private readonly clock: Clock,
     private readonly audit: AuditService,
+    private readonly outbox: OutboxService,
   ) {}
 
   async get(a: AccountAccess): Promise<LimitsView> {
@@ -199,7 +201,7 @@ export class LimitsService {
         objectId: a.account.id,
         after: { side, ...body, calendar },
       });
-      // "Limit changed by other side" notices are push-only; they arrive with M10.
+      await this.notifyOtherSide(tx, a);
       return limitView(row!);
     });
   }
@@ -217,6 +219,36 @@ export class LimitsService {
         objectId: a.account.id,
         after: { side },
       });
+      await this.notifyOtherSide(tx, a);
+    });
+  }
+
+  /** The matrix's "Limit changed by other side" (ADR-015). */
+  private async notifyOtherSide(
+    tx: Pick<Db, 'select' | 'insert'>,
+    a: AccountAccess,
+  ): Promise<void> {
+    const toCustomer = a.role !== 'customer';
+    const [to] = await tx
+      .select()
+      .from(appUser)
+      .where(eq(appUser.id, toCustomer ? a.account.customerUserId : a.merchant.ownerUserId));
+    const [customer] = await tx
+      .select()
+      .from(appUser)
+      .where(eq(appUser.id, a.account.customerUserId));
+    if (!to || !customer) return;
+    await this.outbox.notify(tx, {
+      userId: to.id,
+      phone: to.phone,
+      merchantId: a.merchant.id,
+      event: 'limit_changed',
+      template: toCustomer ? 'sms.limit_changed_customer' : 'sms.limit_changed_shop',
+      params: {
+        shop: a.merchant.shopName,
+        customer: a.account.nickname ?? customer.name ?? customer.phone,
+      },
+      language: to.language,
     });
   }
 

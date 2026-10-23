@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -6,7 +7,10 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Put,
 } from '@nestjs/common';
+import { type SetPushToken, setPushTokenSchema } from '@mezgeb/shared';
+import { ZodValidationPipe } from '../common/zod.pipe.js';
 import { CurrentAuth } from '../auth/auth.decorators.js';
 import type { AuthContext } from '../auth/token.service.js';
 import { DevicesService } from './devices.service.js';
@@ -35,6 +39,16 @@ export class DevicesController {
         current: d.id === auth.deviceId,
       })),
     };
+  }
+
+  /** ADR-015: this device's FCM token (null when the app turns push off). */
+  @Put('me/push-token')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async setPushToken(
+    @CurrentAuth() auth: AuthContext,
+    @Body(new ZodValidationPipe(setPushTokenSchema)) body: SetPushToken,
+  ): Promise<void> {
+    await this.devices.setPushToken(auth.userId, auth.deviceId, body.token);
   }
 
   @Delete(':id')

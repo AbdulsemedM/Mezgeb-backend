@@ -18,6 +18,7 @@ import { Clock } from '../common/clock.js';
 import { DB, type Db } from '../db/db.module.js';
 import { appUser, representative } from '../db/schema.js';
 import { idConflict, invalidPhone } from '../merchants/merchants.service.js';
+import type { NotificationEvent } from '../outbox/notification-rules.js';
 import { OutboxService } from '../outbox/outbox.service.js';
 
 export type RepresentativeRow = typeof representative.$inferSelect;
@@ -154,6 +155,7 @@ export class RepresentativesService {
         after: { account_id: a.account.id, name: body.name, relationship: body.relationship },
       });
       await this.notifyOwner(tx, a, 'representative_added', 'sms.rep_added', body.name);
+      await this.notifyRepresentative(tx, a, row!, 'sms.rep_you_added');
       return { created: true, view: customerView(row!) };
     });
   }
@@ -258,6 +260,7 @@ export class RepresentativesService {
       });
       if (body.status === 'revoked') {
         await this.notifyOwner(tx, a, 'representative_revoked', 'sms.rep_revoked', rep.name);
+        await this.notifyRepresentative(tx, a, rep, 'sms.rep_you_removed');
       }
       return customerView(row!);
     });
@@ -350,11 +353,35 @@ export class RepresentativesService {
     };
   }
 
+  /** The matrix's "Added or removed notice" to the representative, when they have a phone. */
+  private async notifyRepresentative(
+    tx: Pick<Db, 'select' | 'insert'>,
+    a: AccountAccess,
+    rep: RepresentativeRow,
+    template: 'sms.rep_you_added' | 'sms.rep_you_removed',
+  ): Promise<void> {
+    if (!rep.phone) return;
+    const [customer] = await tx
+      .select()
+      .from(appUser)
+      .where(eq(appUser.id, a.account.customerUserId));
+    if (!customer) return;
+    await this.outbox.notify(tx, {
+      userId: null,
+      phone: rep.phone,
+      merchantId: a.merchant.id,
+      event: template === 'sms.rep_you_added' ? 'representative_added' : 'representative_revoked',
+      template,
+      params: { customer: customer.name ?? customer.phone, shop: a.merchant.shopName },
+      language: customer.language,
+    });
+  }
+
   /** "Representative added or revoked": push to the merchant from M10; SMS until then. */
   private async notifyOwner(
     tx: Pick<Db, 'select' | 'insert'>,
     a: AccountAccess,
-    event: string,
+    event: NotificationEvent,
     template: 'sms.rep_added' | 'sms.rep_revoked',
     name: string,
   ): Promise<void> {
@@ -364,7 +391,8 @@ export class RepresentativesService {
       .from(appUser)
       .where(eq(appUser.id, a.account.customerUserId));
     if (!owner || !customer) return;
-    await this.outbox.enqueueSms(tx, {
+    await this.outbox.notify(tx, {
+      merchantId: a.merchant.id,
       userId: owner.id,
       phone: owner.phone,
       event,

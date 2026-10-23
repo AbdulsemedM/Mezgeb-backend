@@ -19,6 +19,7 @@ import { DB, type Db } from '../db/db.module.js';
 import { appUser, deliveryOrder, merchantStaff } from '../db/schema.js';
 import { DisputesService } from '../ledger/disputes.service.js';
 import { idConflict } from '../merchants/merchants.service.js';
+import type { NotificationEvent } from '../outbox/notification-rules.js';
 import { OutboxService } from '../outbox/outbox.service.js';
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
@@ -214,8 +215,8 @@ export class OrdersService {
       a: AccountAccess,
       lang: 'am' | 'om' | 'en',
     ) => {
-      event: string;
-      template: Parameters<OutboxService['enqueueSms']>[1]['template'];
+      event: NotificationEvent;
+      template: Parameters<OutboxService['notify']>[1]['template'];
       params: Record<string, string>;
       lang: 'am' | 'om' | 'en';
     } | null,
@@ -266,7 +267,8 @@ export class OrdersService {
         .where(eq(appUser.id, a.account.customerUserId));
       const message = sms(a, customer!.language);
       if (message) {
-        await this.outbox.enqueueSms(tx, {
+        await this.outbox.notify(tx, {
+          merchantId: a.merchant.id,
           userId: customer!.id,
           phone: customer!.phone,
           event: message.event,
@@ -300,7 +302,8 @@ export class OrdersService {
       .from(appUser)
       .where(eq(appUser.id, a.account.customerUserId));
     for (const { user } of shopPeople) {
-      await this.outbox.enqueueSms(tx, {
+      await this.outbox.notify(tx, {
+        merchantId: a.merchant.id,
         userId: user.id,
         phone: user.phone,
         event: 'order_received',

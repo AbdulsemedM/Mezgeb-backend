@@ -198,6 +198,48 @@ const messages = {
     am: '{shop} ትዕዛዝዎን መቀበል አልቻለም፦ {reason}',
     om: '{shop} ajaja keessan fudhachuu hin dandeenye: {reason}',
   },
+  // ADR-015: the representative's own notices.
+  'sms.rep_you_added': {
+    en: '{customer} added you: you may take goods on their dube at {shop}.',
+    am: '{customer} አክለውዎታል፤ በ{shop} በዱቤያቸው ዕቃ መውሰድ ይችላሉ።',
+    om: '{customer} isin dabalaniiru: {shop} irraa dube isaanii irratti meeshaa fudhachuu dandeessu.',
+  },
+  'sms.rep_you_removed': {
+    en: '{customer} removed you: you can no longer take goods on their dube at {shop}.',
+    am: '{customer} አስወግደውዎታል፤ ከዚህ በኋላ በ{shop} በዱቤያቸው ዕቃ መውሰድ አይችሉም።',
+    om: '{customer} isin haqaniiru: kana booda {shop} irraa dube isaanii irratti meeshaa fudhachuu hin dandeessan.',
+  },
+  // Time limit (ADR-007 due dates) and the other side changing a limit.
+  'sms.due_soon': {
+    en: '{shop}: your dube balance of {balance} is due on {date}.',
+    am: '{shop}፦ የ{balance} የዱቤ ቀሪ ሂሳብዎ እስከ {date} ይከፈላል።',
+    om: '{shop}: haftee dube keessan {balance} hanga {date} kaffalama.',
+  },
+  'sms.due_today': {
+    en: '{shop}: your dube balance of {balance} is due today.',
+    am: '{shop}፦ የ{balance} የዱቤ ቀሪ ሂሳብዎ ዛሬ ይከፈላል።',
+    om: "{shop}: haftee dube keessan {balance} har'a kaffalama.",
+  },
+  'sms.due_today_shop': {
+    en: '{customer} owes {balance}, due today.',
+    am: '{customer} {balance} ዕዳ አለባቸው፤ ዛሬ ይከፈላል።',
+    om: "{customer} {balance} qabu, har'a kaffalama.",
+  },
+  'sms.limit_changed_shop': {
+    en: '{customer} changed their own dube limit.',
+    am: '{customer} የራሳቸውን የዱቤ ገደብ ቀይረዋል።',
+    om: '{customer} daangaa dube isaanii jijjiiraniiru.',
+  },
+  'sms.limit_changed_customer': {
+    en: '{shop} changed your dube limit.',
+    am: '{shop} የዱቤ ገደብዎን ቀይሯል።',
+    om: '{shop} daangaa dube keessan jijjiireera.',
+  },
+  'sms.payment_report_reminder': {
+    en: '{customer} reported a payment of {amount} two days ago. Open Mezgeb to confirm or reject it.',
+    am: '{customer} ከሁለት ቀን በፊት የ{amount} ክፍያ ሪፖርት አድርገዋል። ለማረጋገጥ ወይም ለመቃወም መዝገብን ይክፈቱ።',
+    om: '{customer} guyyaa lama dura kaffaltii {amount} gabaasaniiru. Mirkaneessuuf ykn diduuf Mezgeb banaa.',
+  },
 } as const satisfies Record<string, Record<Language, string>>;
 
 export type MessageKey = keyof typeof messages;

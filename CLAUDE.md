@@ -175,6 +175,15 @@ Delivery orders (M9, ADR-014, `apps/api/src/orders/`):
   price, out). The shop's steps are idempotent and sync ops. Delivery is `entry.create` with
   `order_id` and taken by delivery; `EntriesService.record` locks the order and marks it delivered.
 
+Notifications (M10, ADR-015):
+
+- Call `OutboxService.notify(tx, {userId, phone, event, template, params, language, merchantId,
+  head?, key?})`. The event must be a row of `NOTIFICATION_RULES`, which decides push/SMS/both,
+  quiet hours and the SMS cap. Pass `merchantId` (for the cap) and the account head (for push).
+- `PushSender` (`push/push-sender.ts`): `DisabledPushSender` by default, `FakePushSender` in
+  tests (`t.push.sent`). `RemindersService.runOnce()` (`t.reminders`) handles due dates and PAY-6.
+  `startTestApp({ env })` overrides settings.
+
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 
 - `pnpm --filter @mezgeb/api db:generate` — after editing the schema, generate the next migration.

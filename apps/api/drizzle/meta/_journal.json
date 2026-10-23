@@ -92,6 +92,13 @@
       "when": 1792755119377,
       "tag": "0012_orders_change_log",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792756907190,
+      "tag": "0013_notifications",
+      "breakpoints": true
     }
   ]
 }

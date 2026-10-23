@@ -118,7 +118,8 @@ export class AccountsService {
         objectId: inserted.id,
         after: { merchant_id: inserted.merchantId, customer_user_id: customer.id },
       });
-      await this.outbox.enqueueSms(tx, {
+      await this.outbox.notify(tx, {
+        merchantId: body.merchant_id,
         userId: customer.id,
         phone: customer.phone,
         event: 'customer_invited',

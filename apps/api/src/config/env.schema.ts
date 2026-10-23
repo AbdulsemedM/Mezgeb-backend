@@ -24,6 +24,17 @@ export const envSchema = z
     /** Outbox poll interval; 0 disables the in-process dispatcher (tests call runOnce). */
     OUTBOX_POLL_MS: z.coerce.number().int().min(0).default(2000),
     /**
+     * ADR-015: `none` until a Firebase project exists (everything goes by SMS), `fake` keeps
+     * pushes in memory (dev and tests).
+     */
+    PUSH_PROVIDER: z.enum(['none', 'fake']).default('none'),
+    /** SMS per shop per calendar month (Addis), by plan (ADR-015). Invites are never capped. */
+    SMS_CAP_FREE: z.coerce.number().int().min(0).default(300),
+    SMS_CAP_SHOP: z.coerce.number().int().min(0).default(1500),
+    SMS_CAP_SHOP_PLUS: z.coerce.number().int().min(0).default(5000),
+    /** How often the reminders job runs; 0 disables it (tests call runOnce). */
+    REMINDERS_INTERVAL_MS: z.coerce.number().int().min(0).default(3_600_000),
+    /**
      * Dev-only routes under /v1/dev (e.g. reading the last OTP for the mobile integration test).
      * Off by default and refused outside NODE_ENV=development.
      */

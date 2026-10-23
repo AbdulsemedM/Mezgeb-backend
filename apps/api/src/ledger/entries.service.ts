@@ -36,6 +36,7 @@ import {
 import { verifyDeviceSignature } from '../devices/device-key.js';
 import { t } from '../i18n/messages.js';
 import { idConflict } from '../merchants/merchants.service.js';
+import type { NotificationEvent } from '../outbox/notification-rules.js';
 import { OutboxService } from '../outbox/outbox.service.js';
 import { type EntryRow, type EntryView, entryView, linesByEntry } from './entry.views.js';
 import { limitsInputFor } from './limits.service.js';
@@ -563,17 +564,19 @@ export class EntriesService {
     const language: Language = customer.language;
     const money = (santim: number) => formatBirr(santim, language);
     const send = (
-      event: string,
-      template: Parameters<OutboxService['enqueueSms']>[1]['template'],
+      event: NotificationEvent,
+      template: Parameters<OutboxService['notify']>[1]['template'],
       params: Record<string, string>,
     ) =>
-      this.outbox.enqueueSms(tx, {
+      this.outbox.notify(tx, {
         userId: customer.id,
         phone: customer.phone,
         event,
         template,
         params: { shop: a.merchant.shopName, ...params },
         language,
+        merchantId: a.merchant.id,
+        head: { accountId: acct.id, seq: acct.lastSeq, hash: acct.lastHash },
       });
 
     if (e.type === 'purchase') {
@@ -602,7 +605,8 @@ export class EntriesService {
       }
       // REP-5: the representative's own receipt, if the customer turned it on.
       if (rep?.smsReceipt && rep.phone) {
-        await this.outbox.enqueueSms(tx, {
+        await this.outbox.notify(tx, {
+          merchantId: a.merchant.id,
           userId: null,
           phone: rep.phone,
           event: 'representative_receipt',

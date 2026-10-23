@@ -39,3 +39,7 @@ export type RefreshRequest = z.infer<typeof refreshRequestSchema>;
 export function refreshSigningInput(refreshToken: string): string {
   return `mezgeb-refresh-v1:${refreshToken}`;
 }
+
+/** `PUT /v1/devices/me/push-token` (M10, ADR-015). */
+export const setPushTokenSchema = z.object({ token: z.string().min(1).max(4096).nullable() });
+export type SetPushToken = z.infer<typeof setPushTokenSchema>;
