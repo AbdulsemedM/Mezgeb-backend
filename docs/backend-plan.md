@@ -148,3 +148,8 @@ Review the plan before saying OK. Most mistakes are cheaper to catch there.
 - OpenAPI docs generated; load test (10k merchants, 1M accounts seed); security review
   checklist (OTP abuse, IDOR on every account route, JWT handling).
 - Deployment: container image, migrations on deploy, backups, metrics for the business KPIs.
+
+**Status (2026-10-23):** OpenAPI generated from the controllers (`docs/api/openapi.json`, kept in
+sync by a test), IDOR/token security tests, `docs/security-checklist.md`, Dockerfile with migrations
+on start, backup/restore scripts (`docs/deployment.md`). Vision proxy dropped with the photo sale;
+load test and KPI metrics wait for a host.

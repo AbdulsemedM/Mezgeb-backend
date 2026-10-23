@@ -191,7 +191,13 @@ Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations
 - `pnpm --filter @mezgeb/api exec drizzle-kit generate --custom --name=<name>` — hand-written SQL
   migration (triggers, functions). `0001_append_only_triggers.sql` blocks UPDATE/DELETE/TRUNCATE on
   `entry`, `entry_line`, `audit_log` with SQLSTATE `MZ001`.
-- `pnpm build && pnpm --filter @mezgeb/api db:migrate` — apply migrations to `DATABASE_URL`.
+- `pnpm build && pnpm --filter @mezgeb/api db:migrate` — apply migrations to `DATABASE_URL`
+  (under an advisory lock, so containers starting together are safe).
+- `pnpm build && pnpm --filter @mezgeb/api openapi` — regenerate `docs/api/openapi.json` after
+  changing a route or schema (`listRoutes()` in `src/openapi/routes.ts` reads the controllers;
+  add a new controller to `API_CONTROLLERS`). A test fails if the file is stale.
+- `docker build -t mezgeb-api .` — the image (`ops/start.sh` migrates, then starts).
+  `ops/backup.sh` / `ops/restore.sh`, see `docs/deployment.md` and `docs/security-checklist.md`.
 
 Tests:
 
@@ -204,6 +210,9 @@ Tests:
   `newDevice()`, `refreshBody(device, token)`, `nextIp()` (per-IP limits are real in tests).
 - Fixtures in `test/setup/fixtures.ts`: `seedAccount()`, `purchase()` (a valid entry row to override),
   `pgError()` (unwraps the Postgres error so tests can assert `code` and `constraint`).
+- `test/security/idor.int.test.ts` calls every route with an id as a stranger (404, never 2xx or
+  403), every private route without a token (401) and with forged tokens. New routes are picked
+  up automatically; give a new `{param}` or object kind a real id there.
 
 ## How to work in this repo
 

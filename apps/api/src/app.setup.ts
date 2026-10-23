@@ -9,6 +9,8 @@ export function configureApp<T extends INestApplication>(app: T): T {
   const config = app.get<AppConfig>(APP_CONFIG);
   // Behind a load balancer, req.ip must come from X-Forwarded-For for per-IP OTP limits.
   (app as unknown as NestExpressApplication).set('trust proxy', config.TRUST_PROXY);
+  // M12: do not advertise the framework.
+  (app as unknown as NestExpressApplication).disable('x-powered-by');
   app.setGlobalPrefix('v1');
   app.useGlobalFilters(new HttpExceptionFilter());
   app.enableShutdownHooks();

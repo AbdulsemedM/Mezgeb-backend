@@ -37,8 +37,8 @@ describe('migrations', () => {
     await t?.close();
   });
 
-  it('apply cleanly on an empty database', async () => {
-    await runMigrations(t.pool);
+  it('apply cleanly on an empty database, even from several containers at once', async () => {
+    await Promise.all([runMigrations(t.pool), runMigrations(t.pool), runMigrations(t.pool)]);
 
     const { rows } = await t.pool.query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables
