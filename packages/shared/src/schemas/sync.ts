@@ -15,6 +15,10 @@ export const SYNC_OPS = [
   'dispute.resolve',
   'correction_request.create',
   'correction_request.resolve',
+  'order.accept',
+  'order.decline',
+  'order.price',
+  'order.out',
   'limit.set',
   'limit.delete',
 ] as const;

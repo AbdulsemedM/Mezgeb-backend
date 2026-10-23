@@ -169,6 +169,12 @@ Payments (M8, ADR-013, `apps/api/src/payments/`):
 - `PaymentsService`: pay-me (with the shop's `payment_details`), reports (customer), and
   confirm/reject (owner, online). Pay-me and reports sync to owner and customer only.
 
+Delivery orders (M9, ADR-014, `apps/api/src/orders/`):
+
+- `OrdersService` handles the customer's order and receipt, and the shop's steps (accept, decline,
+  price, out). The shop's steps are idempotent and sync ops. Delivery is `entry.create` with
+  `order_id` and taken by delivery; `EntriesService.record` locks the order and marks it delivered.
+
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 
 - `pnpm --filter @mezgeb/api db:generate` — after editing the schema, generate the next migration.

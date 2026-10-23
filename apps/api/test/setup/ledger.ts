@@ -36,6 +36,8 @@ export interface EntryOptions {
   amount?: number;
   lines?: EntryLineInput[];
   takenBy?: CreateEntry['taken_by_type'];
+  /** ADR-014: a delivered order. */
+  orderId?: string;
   representativeId?: string;
   reason?: string;
   recordedAt?: Date;
@@ -56,6 +58,7 @@ export function purchaseBody(
     lines: o.lines ?? [],
     taken_by_type: o.takenBy ?? 'customer',
     representative_id: o.representativeId ?? null,
+    order_id: o.orderId ?? null,
     ref_entry_id: null,
     reason: o.reason ?? null,
     device_id: user.device.id,

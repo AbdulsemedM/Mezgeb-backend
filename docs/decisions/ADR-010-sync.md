@@ -22,6 +22,7 @@ unauthenticated.
 | `dispute.resolve` | `id` + `{ correction_entry_id }` or `{ note }` (the same answer again is a retry) |
 | `correction_request.create` | `entry_id` + `{ id, amount, reason }` (ADR-012) |
 | `correction_request.resolve` | `id` + `{ correction_entry_id }` or `{ note }` (ADR-012) |
+| `order.accept`, `order.decline`, `order.price`, `order.out` | `id` + the REST body (ADR-014) |
 | `limit.set` | `account_id`, `side` + the `PUT /v1/accounts/{id}/limits/{side}` body |
 | `limit.delete` | `account_id`, `side` |
 

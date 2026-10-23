@@ -54,7 +54,7 @@ describe('migrations', () => {
     const before = await count();
     await runMigrations(t.pool);
     expect(await count()).toBe(before);
-    expect(before).toBe(12);
+    expect(before).toBe(13);
   });
 
   it('install the append-only and change-log triggers', async () => {
@@ -68,6 +68,7 @@ describe('migrations', () => {
       'change_account',
       'change_catalogue',
       'change_correction_request',
+      'change_delivery_order',
       'change_dispute',
       'change_entry',
       'change_limit',

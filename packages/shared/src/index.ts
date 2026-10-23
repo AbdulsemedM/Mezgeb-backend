@@ -7,6 +7,7 @@ export * from './uuid.js';
 export * from './ecdsa.js';
 export * from './schemas/merchants.js';
 export * from './schemas/entries.js';
+export * from './schemas/orders.js';
 export * from './schemas/representatives.js';
 export * from './schemas/sync.js';
 export * from './money.js';

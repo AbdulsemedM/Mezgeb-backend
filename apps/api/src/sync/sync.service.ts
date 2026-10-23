@@ -5,7 +5,10 @@ import {
   createDisputeSchema,
   createEntrySchema,
   createRepresentativeSchema,
+  declineOrderSchema,
   limitSideSchema,
+  outForDeliverySchema,
+  priceOrderSchema,
   resolveCorrectionRequestSchema,
   resolveDisputeSchema,
   setLimitSchema,
@@ -31,6 +34,7 @@ import {
   catalogueItem,
   changeLog,
   correctionRequest,
+  deliveryOrder,
   dispute,
   paymentReport,
   paymeRequest,
@@ -46,6 +50,7 @@ import {
   correctionRequestView,
 } from '../ledger/correction-requests.service.js';
 import { type DisputeView, DisputesService, disputeView } from '../ledger/disputes.service.js';
+import { type OrderView, OrdersService, orderView } from '../orders/orders.service.js';
 import {
   type PaymentReportView,
   paymentReportView,
@@ -83,6 +88,8 @@ export interface SyncChanges {
   /** Owner and customer only (ADR-003, ADR-013). */
   payme_requests: PaymeView[];
   payment_reports: PaymentReportView[];
+  /** Shop (owner and staff) and customer (ADR-014). */
+  orders: OrderView[];
   limits: (LimitView & { account_id: string; side: 'merchant' | 'customer' })[];
   catalogue: {
     id: string;
@@ -152,6 +159,7 @@ export class SyncService {
     private readonly disputes: DisputesService,
     private readonly corrections: CorrectionRequestsService,
     private readonly limits: LimitsService,
+    private readonly orders: OrdersService,
   ) {}
 
   async sync(auth: AuthContext, body: SyncRequest): Promise<SyncResponse> {
@@ -252,6 +260,20 @@ export class SyncService {
           parse(resolveCorrectionRequestSchema, omit(body, 'id')),
         );
       }
+      case 'order.accept':
+        return this.orders.accept(userId, parse(withId, body).id);
+      case 'order.decline': {
+        const { id } = parse(withId, body);
+        return this.orders.decline(userId, id, parse(declineOrderSchema, omit(body, 'id')));
+      }
+      case 'order.price': {
+        const { id } = parse(withId, body);
+        return this.orders.price(userId, id, parse(priceOrderSchema, omit(body, 'id')));
+      }
+      case 'order.out': {
+        const { id } = parse(withId, body);
+        return this.orders.out(userId, id, parse(outForDeliverySchema, omit(body, 'id')));
+      }
       case 'limit.set': {
         const { account_id, side } = parse(limitTarget, body);
         const a = await this.access.requireAccount(userId, account_id, 'view_account');
@@ -350,6 +372,7 @@ export class SyncService {
         correction_requests: [],
         payme_requests: [],
         payment_reports: [],
+        orders: [],
         limits: [],
         catalogue: [],
         merchants: [],
@@ -471,6 +494,15 @@ export class SyncService {
       out.changes.payment_reports = rows
         .filter((r) => accountAllows(accountRole(owners.get(r.accountId)!), 'view_balance'))
         .map(paymentReportView);
+    }
+
+    const orderIds = ids('delivery_order');
+    if (orderIds.length) {
+      const rows = await this.db
+        .select()
+        .from(deliveryOrder)
+        .where(inArray(deliveryOrder.id, orderIds));
+      out.changes.orders = rows.map(orderView);
     }
 
     // Limits: owner and customer only (ADR-003); a missing row was deleted.

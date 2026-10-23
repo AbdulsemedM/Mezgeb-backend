@@ -177,6 +177,27 @@ const messages = {
   'payment_method.mpesa': { en: 'M-PESA', am: 'ኤም-ፔሳ', om: 'M-PESA' },
   'payment_method.bank_transfer': { en: 'bank transfer', am: 'በባንክ ዝውውር', om: 'baankii' },
   'payment_method.other': { en: 'another way', am: 'በሌላ መንገድ', om: 'karaa biraa' },
+  // ADR-014 delivery orders.
+  'sms.order_received': {
+    en: 'New delivery order from {customer} ({count} items). Open Mezgeb to answer it.',
+    am: 'ከ{customer} አዲስ የማድረስ ትዕዛዝ ({count} ዕቃዎች)። ለመመለስ መዝገብን ይክፈቱ።',
+    om: 'Ajaja geejjibaa haaraa {customer} irraa (meeshaa {count}). Deebisuuf Mezgeb banaa.',
+  },
+  'sms.order_priced': {
+    en: '{shop} priced your order: {total}. It will be on its way soon.',
+    am: '{shop} ትዕዛዝዎን ዋጋ አውጥቷል፦ {total}። በቅርቡ ይላካል።',
+    om: '{shop} ajaja keessan gatii baaseera: {total}. Dhiheenyatti ni ergama.',
+  },
+  'sms.order_out': {
+    en: '{shop}: your order is on its way.',
+    am: '{shop}፦ ትዕዛዝዎ በመንገድ ላይ ነው።',
+    om: '{shop}: ajajni keessan karaa irra jira.',
+  },
+  'sms.order_declined': {
+    en: '{shop} could not take your order: {reason}',
+    am: '{shop} ትዕዛዝዎን መቀበል አልቻለም፦ {reason}',
+    om: '{shop} ajaja keessan fudhachuu hin dandeenye: {reason}',
+  },
 } as const satisfies Record<string, Record<Language, string>>;
 
 export type MessageKey = keyof typeof messages;

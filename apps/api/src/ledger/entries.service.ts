@@ -25,6 +25,7 @@ import {
   account,
   appUser,
   catalogueItem,
+  deliveryOrder,
   device,
   entry,
   entryLine,
@@ -147,6 +148,41 @@ export class EntriesService {
       }
 
       const rep = await this.checkReferences(tx, acct!, body);
+      // ADR-014: a delivered order is one purchase; the order may only be delivered once.
+      const order = body.order_id
+        ? (
+            await tx
+              .select()
+              .from(deliveryOrder)
+              .where(eq(deliveryOrder.id, body.order_id))
+              .for('update')
+          )[0]
+        : undefined;
+      if (body.order_id) {
+        if (order?.accountId !== acct!.id) {
+          throw new AppError(
+            'invalid_order',
+            'The order must belong to this account',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        if (order.deliveredEntryId && order.deliveredEntryId !== body.id) {
+          throw new AppError(
+            'order_already_delivered',
+            'This order was already delivered',
+            HttpStatus.CONFLICT,
+            { entry_id: order.deliveredEntryId },
+          );
+        }
+        if (order.status === 'declined' || order.status === 'sent') {
+          throw new AppError(
+            'invalid_order_step',
+            `An order that is ${order.status} cannot be delivered`,
+            HttpStatus.CONFLICT,
+            { status: order.status },
+          );
+        }
+      }
 
       // 4–8. Limits and flags, then the chain position.
       const now = this.clock.now();
@@ -226,7 +262,7 @@ export class EntriesService {
           amount: body.amount,
           takenByType: body.taken_by_type ?? null,
           representativeId: body.representative_id ?? null,
-          orderId: null,
+          orderId: body.order_id ?? null,
           refEntryId: body.ref_entry_id ?? null,
           reason: body.reason ?? null,
           paymentMethod: body.type === 'payment' ? body.method! : null,
@@ -272,6 +308,12 @@ export class EntriesService {
         .returning();
 
       if (body.type === 'payment') await applyToPayme(tx, acct!.id, now);
+      if (order) {
+        await tx
+          .update(deliveryOrder)
+          .set({ status: 'delivered', deliveredEntryId: body.id, updatedAt: now })
+          .where(eq(deliveryOrder.id, order.id));
+      }
       if (raiseUsed) {
         await tx
           .update(limitRaise)

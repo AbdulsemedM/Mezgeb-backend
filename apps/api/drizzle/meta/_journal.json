@@ -85,6 +85,13 @@
       "when": 1792698301390,
       "tag": "0011_payments_change_log",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792755119377,
+      "tag": "0012_orders_change_log",
+      "breakpoints": true
     }
   ]
 }

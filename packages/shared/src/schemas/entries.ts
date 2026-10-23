@@ -64,8 +64,8 @@ export const createEntrySchema = z
     lines: z.array(entryLineSchema).max(100).default([]),
     taken_by_type: z.enum(['customer', 'representative', 'delivery']).nullish(),
     representative_id: z.uuid().nullish(),
-    /** Delivery orders arrive in M9. */
-    order_id: z.null().optional(),
+    /** M9: a delivered order posts as one purchase taken by delivery (ADR-014). */
+    order_id: z.uuid().nullish(),
     ref_entry_id: z.uuid().nullish(),
     /** Payments only (ADR-013); not signed. */
     method: paymentMethodSchema.nullish(),
@@ -92,11 +92,17 @@ export const createEntrySchema = z
       if (e.amount <= 0) issue('amount', 'a purchase amount is positive');
       if (e.taken_by_type == null) issue('taken_by_type', 'a purchase says who took the goods');
       if (e.ref_entry_id != null) issue('ref_entry_id', 'only corrections reference an entry');
+      if (e.order_id != null && e.taken_by_type !== 'delivery') {
+        issue('taken_by_type', 'a delivered order is taken by delivery');
+      }
     } else if (e.type === 'correction') {
       if (e.amount === 0) issue('amount', 'a correction changes the balance (ADR-004)');
       if (e.taken_by_type != null) issue('taken_by_type', 'only purchases say who took them');
       if (e.ref_entry_id == null) issue('ref_entry_id', 'a correction references the original');
       if (e.reason == null) issue('reason', 'a correction needs a reason');
+    }
+    if (e.type !== 'purchase' && e.order_id != null) {
+      issue('order_id', 'only purchases come from orders');
     }
     if ((e.taken_by_type === 'representative') !== (e.representative_id != null)) {
       issue('representative_id', 'needed exactly when a representative took the goods');
