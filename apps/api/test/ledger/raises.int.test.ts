@@ -76,6 +76,40 @@ describe('one-time raise over the hard stop (ADR-011, LIM-3)', () => {
     expect(next.body.code).toBe('limit_hard_stop');
   });
 
+  it('ADR-016: the customer sees the waiting request and approves it without a code', async () => {
+    const { owner, customer, accountId } = await hardStopAccount();
+    const asked = await requestRaise(owner.accessToken, accountId, 2_000);
+
+    const listed = await t.get(`/v1/accounts/${accountId}/raises`, { token: customer.accessToken });
+    expect(listed.status).toBe(200);
+    expect(listed.body.raises).toEqual([
+      expect.objectContaining({ id: asked.body.id, amount: 2_000, status: 'pending' }),
+    ]);
+    // The shop sees it too (it asked); a stranger gets 404 (IDOR test).
+    expect(
+      (await t.get(`/v1/accounts/${accountId}/raises`, { token: owner.accessToken })).status,
+    ).toBe(200);
+
+    const approved = await approve(customer.accessToken, accountId, asked.body.id);
+    expect(approved.body.status).toBe('approved');
+    // Approved or expired requests no longer wait.
+    expect(
+      (await t.get(`/v1/accounts/${accountId}/raises`, { token: customer.accessToken })).body
+        .raises,
+    ).toEqual([]);
+  });
+
+  it('ADR-016: an expired request is not listed', async () => {
+    const { owner, accountId, phone } = await hardStopAccount();
+    await requestRaise(owner.accessToken, accountId, 2_000);
+    t.clock.advance(RAISE_CODE_TTL_MS + 1);
+    // The 15-minute access token expired with the clock: sign in again.
+    const customer = await login(t, { phone });
+    const listed = await t.get(`/v1/accounts/${accountId}/raises`, { token: customer.accessToken });
+    expect(listed.status).toBe(200);
+    expect(listed.body.raises).toEqual([]);
+  });
+
   it('a sale beyond the approved amount is still refused, and the raise stays', async () => {
     const { owner, accountId, phone } = await hardStopAccount();
     const asked = await requestRaise(owner.accessToken, accountId, 1_000);

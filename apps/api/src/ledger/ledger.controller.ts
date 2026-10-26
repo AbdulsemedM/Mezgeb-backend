@@ -85,6 +85,13 @@ export class LedgerController {
     return view;
   }
 
+  /** ADR-016: the customer's waiting requests, to approve in the PWA without a code. */
+  @Get('accounts/:id/raises')
+  @AccountActionRequired('approve_raise')
+  listRaises(@CurrentAccountAccess() a: AccountAccess): Promise<{ raises: RaiseView[] }> {
+    return this.raises.listPending(a);
+  }
+
   @Post('accounts/:id/raises/:raiseId/approve')
   @AccountActionRequired('approve_raise')
   @HttpCode(HttpStatus.OK)

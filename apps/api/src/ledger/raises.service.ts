@@ -64,6 +64,25 @@ export class RaisesService {
     this.pepper = config.OTP_PEPPER;
   }
 
+  /**
+   * Requests still waiting for an answer (not expired), newest first. The PWA shows them so the
+   * customer can approve without a code (ADR-016).
+   */
+  async listPending(a: AccountAccess): Promise<{ raises: RaiseView[] }> {
+    const rows = await this.db
+      .select()
+      .from(limitRaise)
+      .where(
+        and(
+          eq(limitRaise.accountId, a.account.id),
+          eq(limitRaise.status, 'pending'),
+          gt(limitRaise.expiresAt, this.clock.now()),
+        ),
+      )
+      .orderBy(desc(limitRaise.createdAt));
+    return { raises: rows.map(raiseView) };
+  }
+
   /** 201 when created and the SMS sent; 200 with the original for a retry (no new SMS). */
   async request(
     a: AccountAccess,

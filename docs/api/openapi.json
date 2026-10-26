@@ -1462,6 +1462,48 @@
       }
     },
     "/v1/accounts/{id}/raises": {
+      "get": {
+        "operationId": "Ledger.listRaises",
+        "x-account-action": "approve_raise",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Error: `{ code, message, details? }` (CLAUDE.md conventions)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "details": {}
+                  }
+                }
+              }
+            }
+          },
+          "2XX": {
+            "description": "Success"
+          }
+        }
+      },
       "post": {
         "operationId": "Ledger.requestRaise",
         "x-account-action": "request_raise",
