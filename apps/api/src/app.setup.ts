@@ -11,6 +11,12 @@ export function configureApp<T extends INestApplication>(app: T): T {
   (app as unknown as NestExpressApplication).set('trust proxy', config.TRUST_PROXY);
   // M12: do not advertise the framework.
   (app as unknown as NestExpressApplication).disable('x-powered-by');
+  // ADR-016: the PWA calls the API from its own origin with the refresh cookie.
+  app.enableCors({
+    origin: [new URL(config.PUBLIC_WEB_URL).origin, ...config.CORS_ORIGINS],
+    credentials: true,
+    maxAge: 86_400,
+  });
   app.setGlobalPrefix('v1');
   app.useGlobalFilters(new HttpExceptionFilter());
   app.enableShutdownHooks();

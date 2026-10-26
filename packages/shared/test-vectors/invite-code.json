@@ -1,0 +1,18 @@
+{
+  "description": "normalizeInviteCode(input) -> output or null. 8 characters from 23456789ABCDEFGHJKMNPQRSTVWXYZ; case-insensitive; spaces and dashes ignored. ADR-016.",
+  "cases": [
+    { "input": "K7M2P9QX", "output": "K7M2P9QX" },
+    { "input": "k7m2p9qx", "output": "K7M2P9QX" },
+    { "input": "k7m2-p9qx", "output": "K7M2P9QX" },
+    { "input": " K7M2 P9QX ", "output": "K7M2P9QX" },
+    { "input": "K7M2P9Q0", "output": null },
+    { "input": "K7M2P9QO", "output": null },
+    { "input": "K7M2P9Q1", "output": null },
+    { "input": "K7M2P9QI", "output": null },
+    { "input": "K7M2P9QL", "output": null },
+    { "input": "K7M2P9QU", "output": null },
+    { "input": "K7M2P9Q", "output": null },
+    { "input": "K7M2P9QXZ", "output": null },
+    { "input": "", "output": null }
+  ]
+}

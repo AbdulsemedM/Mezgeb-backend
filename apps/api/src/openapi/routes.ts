@@ -3,6 +3,7 @@ import { METHOD_METADATA, PATH_METADATA, ROUTE_ARGS_METADATA } from '@nestjs/com
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum.js';
 import type { z } from 'zod';
 import { AccountsController } from '../accounts/accounts.controller.js';
+import { InvitesController } from '../accounts/invites.controller.js';
 import { AuthController } from '../auth/auth.controller.js';
 import { IS_PUBLIC } from '../auth/auth.decorators.js';
 import { DevicesController } from '../devices/devices.controller.js';
@@ -24,6 +25,7 @@ export const API_CONTROLLERS = [
   UsersController,
   MerchantsController,
   AccountsController,
+  InvitesController,
   LedgerController,
   PaymentsController,
   OrdersController,

@@ -47,6 +47,8 @@ export interface Verified extends TokenPair {
 @Injectable()
 export class OtpService {
   private readonly pepper: string;
+  /** ADR-016: the PWA's host, for the WebOTP line Android Chrome reads (`@host #code`). */
+  private readonly webOtpHost: string;
 
   constructor(
     @Inject(DB) private readonly db: Db,
@@ -57,6 +59,7 @@ export class OtpService {
     private readonly tokens: TokenService,
   ) {
     this.pepper = config.OTP_PEPPER;
+    this.webOtpHost = new URL(config.PUBLIC_WEB_URL).host;
   }
 
   /** Sends a code. Answers the same whether or not the phone has an account. */
@@ -119,7 +122,7 @@ export class OtpService {
 
     await this.sms.send({
       to: phone,
-      text: t('sms.otp', smsLanguage, { code, minutes: OTP_TTL_MS / 60_000 }),
+      text: `${t('sms.otp', smsLanguage, { code, minutes: OTP_TTL_MS / 60_000 })}\n\n@${this.webOtpHost} #${code}`,
     });
     return {
       expires_at: expiresAt.toISOString(),

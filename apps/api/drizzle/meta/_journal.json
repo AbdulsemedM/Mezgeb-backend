@@ -99,6 +99,13 @@
       "when": 1792756907190,
       "tag": "0013_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792998194506,
+      "tag": "0014_account_invites",
+      "breakpoints": true
     }
   ]
 }

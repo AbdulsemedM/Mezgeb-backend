@@ -4,6 +4,7 @@ import { createTestDb, type TestDb } from '../setup/db.js';
 
 const TABLES = [
   'account',
+  'account_invite',
   'account_limit',
   'app_user',
   'audit_log',
@@ -54,7 +55,7 @@ describe('migrations', () => {
     const before = await count();
     await runMigrations(t.pool);
     expect(await count()).toBe(before);
-    expect(before).toBe(14);
+    expect(before).toBe(15);
   });
 
   it('install the append-only and change-log triggers', async () => {

@@ -2072,12 +2072,81 @@
                       "id",
                       "public_key"
                     ]
+                  },
+                  "session": {
+                    "type": "string",
+                    "enum": [
+                      "token",
+                      "cookie"
+                    ]
                   }
                 },
                 "required": [
                   "phone",
                   "code",
                   "device"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Error: `{ code, message, details? }` (CLAUDE.md conventions)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "details": {}
+                  }
+                }
+              }
+            }
+          },
+          "2XX": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/v1/auth/web/refresh": {
+      "post": {
+        "operationId": "Auth.webRefresh",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "device_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "device_sig": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "format": "base64",
+                    "contentEncoding": "base64",
+                    "pattern": "^$|^(?:[0-9a-zA-Z+/]{4})*(?:(?:[0-9a-zA-Z+/]{2}==)|(?:[0-9a-zA-Z+/]{3}=))?$"
+                  }
+                },
+                "required": [
+                  "device_id",
+                  "device_sig"
                 ]
               }
             }
@@ -2284,6 +2353,40 @@
             }
           }
         },
+        "responses": {
+          "default": {
+            "description": "Error: `{ code, message, details? }` (CLAUDE.md conventions)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "details": {}
+                  }
+                }
+              }
+            }
+          },
+          "2XX": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/v1/devices/web-push-key": {
+      "get": {
+        "operationId": "Devices.webPushKey",
+        "security": [],
         "responses": {
           "default": {
             "description": "Error: `{ code, message, details? }` (CLAUDE.md conventions)",
@@ -2527,6 +2630,50 @@
       "get": {
         "operationId": "Health.check",
         "security": [],
+        "responses": {
+          "default": {
+            "description": "Error: `{ code, message, details? }` (CLAUDE.md conventions)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "details": {}
+                  }
+                }
+              }
+            }
+          },
+          "2XX": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/v1/invites/{code}": {
+      "get": {
+        "operationId": "Invites.resolve",
+        "security": [],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": "Error: `{ code, message, details? }` (CLAUDE.md conventions)",

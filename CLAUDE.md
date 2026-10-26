@@ -9,7 +9,8 @@ that override or extend the specs live in `docs/decisions/` (decisions win when 
 
 - `apps/api` — NestJS (TypeScript) backend. **Built first.**
 - `apps/mobile` — Flutter app for merchants AND customers (roles are per account). Built second.
-- `apps/web` — lightweight customer PWA for the no-install invite link. Built third.
+- `apps/web` — placeholder. The customer PWA lives in its own repository (`../web`, decided
+  2026-10-26) and uses `packages/shared` from this one. Built third.
 - `packages/shared` — TypeScript code shared by the API and the PWA: types, limits engine,
   canonical JSON, money and calendar helpers. The Flutter app ports the same logic to Dart
   and must pass the same test vectors in `packages/shared/test-vectors/`.
@@ -183,6 +184,18 @@ Notifications (M10, ADR-015):
 - `PushSender` (`push/push-sender.ts`): `DisabledPushSender` by default, `FakePushSender` in
   tests (`t.push.sent`). `RemindersService.runOnce()` (`t.reminders`) handles due dates and PAY-6.
   `startTestApp({ env })` overrides settings.
+
+Customer PWA backend (W0, ADR-016):
+
+- Invites: `account_invite` code (8 chars, 14 days) created with the account; SMS links `/i/<code>`;
+  public `GET /v1/invites/{code}` (shop name, language, state). Pending invites after sign-in come
+  from `GET /v1/accounts?role=customer` (`status: pending`).
+- PWA session: `verify` with `session: 'cookie'` sets httpOnly `mz_refresh` (Path=/v1/auth);
+  `POST /v1/auth/web/refresh` signs `mezgeb-refresh-web-v1:<refresh_id>`. CORS allows the
+  PUBLIC_WEB_URL origin plus `CORS_ORIGINS` with credentials. OTP SMS end with `@host #code`.
+- Web Push: push token `webpush:` + PushSubscription JSON; `RoutingPushSender` splits FCM and
+  VAPID (`WebPushSender`); `PushSender.accepts(token)`. `GET /v1/devices/web-push-key` is public.
+- `t.get/post(..., { headers })` sends extra headers (cookies); responses carry `headers`.
 
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 

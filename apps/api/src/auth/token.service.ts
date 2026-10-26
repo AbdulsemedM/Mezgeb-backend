@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { refreshSigningInput, uuidv7 } from '@mezgeb/shared';
+import { refreshSigningInput, uuidv7, webRefreshSigningInput } from '@mezgeb/shared';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { errors as joseErrors, jwtVerify, SignJWT } from 'jose';
 import { AppError } from '../common/app-error.js';
@@ -26,7 +26,15 @@ export interface TokenPair {
   access_expires_at: string;
   refresh_token: string;
   refresh_expires_at: string;
+  /** Public id of the refresh token; the PWA signs it to refresh its cookie session (ADR-016). */
+  refresh_id: string;
 }
+
+/**
+ * What the device signed: the token itself (the app, ADR-005), or the token's id (the PWA,
+ * whose token sits in an httpOnly cookie it cannot read, ADR-016).
+ */
+export type RefreshProof = 'token' | 'web';
 
 type Tx = Pick<Db, 'insert' | 'update'>;
 
@@ -73,7 +81,12 @@ export class TokenService {
    * Rotates a refresh token (ADR-005). The device signature is checked before anything else,
    * so a stolen token without the device key cannot even trigger reuse revocation.
    */
-  async refresh(token: string, deviceId: string, deviceSig: string): Promise<TokenPair> {
+  async refresh(
+    token: string,
+    deviceId: string,
+    deviceSig: string,
+    proof: RefreshProof = 'token',
+  ): Promise<TokenPair> {
     const outcome = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .select()
@@ -88,7 +101,8 @@ export class TokenService {
       if (!dev || dev.revokedAt) {
         return { error: unauthorized('device_revoked', 'This device has been revoked') };
       }
-      if (!verifyDeviceSignature(dev.publicKey, refreshSigningInput(token), deviceSig)) {
+      const signed = proof === 'web' ? webRefreshSigningInput(row.id) : refreshSigningInput(token);
+      if (!verifyDeviceSignature(dev.publicKey, signed, deviceSig)) {
         return { error: unauthorized('refresh_invalid', 'Device signature is invalid') };
       }
 
@@ -192,6 +206,7 @@ export class TokenService {
       access_expires_at: accessExpires.toISOString(),
       refresh_token: refresh,
       refresh_expires_at: refreshExpires.toISOString(),
+      refresh_id: id,
     };
   }
 }

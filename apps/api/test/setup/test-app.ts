@@ -16,12 +16,15 @@ import { createTestDb, type TestDb } from './db.js';
 export interface ApiResponse<T = any> {
   status: number;
   body: T;
+  headers: Headers;
 }
 
 export interface RequestOptions {
   token?: string;
   /** Sent as X-Forwarded-For; the test app trusts the proxy header. */
   ip?: string;
+  /** Extra request headers (e.g. `cookie`, `origin`). */
+  headers?: Record<string, string>;
 }
 
 export interface TestApp {
@@ -106,7 +109,7 @@ export async function startTestApp(
   const baseUrl = await app.getUrl();
 
   const call = async (method: string, path: string, body: unknown, o: RequestOptions = {}) => {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { ...o.headers };
     if (body !== undefined) headers['content-type'] = 'application/json';
     if (o.token) headers.authorization = `Bearer ${o.token}`;
     if (o.ip) headers['x-forwarded-for'] = o.ip;
@@ -116,7 +119,7 @@ export async function startTestApp(
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const text = await res.text();
-    return { status: res.status, body: text ? JSON.parse(text) : undefined };
+    return { status: res.status, body: text ? JSON.parse(text) : undefined, headers: res.headers };
   };
 
   let closed = false;

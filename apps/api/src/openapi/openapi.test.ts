@@ -23,14 +23,15 @@ describe('OpenAPI (M12)', () => {
     expect(unvalidated.map((r) => `${r.method} ${r.path}`)).toEqual([]);
   });
 
-  it('only sign-in and health are public', () => {
+  // ADR-016 adds the invite screen and the VAPID key, both shown before sign-in.
+  it('only sign-in, health, invite codes and the web push key are public', () => {
     expect(
       listRoutes()
         .filter((r) => r.public)
         .map((r) => r.path),
     ).toEqual(expect.arrayContaining(['/v1/health', '/v1/auth/otp', '/v1/auth/verify']));
     for (const r of listRoutes().filter((x) => x.public)) {
-      expect(r.path).toMatch(/^\/v1\/(health|auth\/)/);
+      expect(r.path).toMatch(/^\/v1\/(health|auth\/|invites\/\{code\}$|devices\/web-push-key$)/);
     }
   });
 });

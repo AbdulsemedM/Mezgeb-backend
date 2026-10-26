@@ -120,7 +120,9 @@ export class OutboxDispatcher implements OnApplicationBootstrap, OnApplicationSh
                 isNull(device.revokedAt),
               ),
             )
-        ).filter((d): d is { id: string; token: string } => d.token !== null)
+        ).filter(
+          (d): d is { id: string; token: string } => d.token !== null && this.push.accepts(d.token),
+        )
       : [];
     if (!this.push.enabled || tokens.length === 0) {
       throw new PushUnavailable('no live push token');

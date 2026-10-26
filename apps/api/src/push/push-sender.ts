@@ -18,6 +18,11 @@ export abstract class PushSender {
 
   /** Tokens the provider says are no longer valid (the app was removed). */
   abstract send(message: PushMessage): Promise<{ invalidTokens: string[] }>;
+
+  /** Whether this sender can deliver to `token` (an FCM token or a Web Push subscription). */
+  accepts(_token: string): boolean {
+    return this.enabled;
+  }
 }
 
 /** No Firebase project yet: push is off and SMS carries everything. */

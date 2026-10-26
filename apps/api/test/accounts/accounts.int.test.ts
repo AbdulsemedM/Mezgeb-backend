@@ -49,8 +49,9 @@ describe('accounts', () => {
 
       expect(t.sms.lastTo('+251911223344')).toBeUndefined();
       expect(await t.outbox.runOnce()).toBeGreaterThanOrEqual(1);
-      expect(t.sms.lastTo('+251911223344')?.text).toBe(
-        `Tigist Mini Market added you to Mezgeb, your shared dube book. See every purchase and your balance: http://localhost:5173/a/${body.id}`,
+      // ADR-016: the link carries an 8-character invite code.
+      expect(t.sms.lastTo('+251911223344')?.text).toMatch(
+        /^Tigist Mini Market added you to Mezgeb, your shared dube book\. See every purchase and your balance: http:\/\/localhost:5173\/i\/[2-9A-HJKMNP-TV-Z]{8}$/,
       );
       const [row] = await t
         .db!.db.select()

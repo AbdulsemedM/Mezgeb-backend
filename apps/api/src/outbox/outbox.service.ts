@@ -127,12 +127,13 @@ export class OutboxService {
     });
   }
 
+  /** A live token that a configured sender can reach (FCM for the app, Web Push for the PWA). */
   private async hasToken(tx: Tx, userId: string): Promise<boolean> {
-    const [row] = await tx
-      .select({ n: count() })
+    const rows = await tx
+      .select({ token: device.pushToken })
       .from(device)
       .where(and(eq(device.userId, userId), isNotNull(device.pushToken), isNull(device.revokedAt)));
-    return (row?.n ?? 0) > 0;
+    return rows.some((r) => r.token !== null && this.push.accepts(r.token));
   }
 
   private async overCap(tx: Tx, merchantId: string): Promise<boolean> {

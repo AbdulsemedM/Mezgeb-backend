@@ -21,6 +21,27 @@ export const envSchema = z
     TRUST_PROXY: z.stringbool().default(false),
     /** Base URL of the customer PWA; invite links point here (ADR-006). */
     PUBLIC_WEB_URL: z.url().default('http://localhost:5173'),
+    /**
+     * ADR-016: extra browser origins allowed to call the API with credentials, comma separated.
+     * The origin of PUBLIC_WEB_URL is always allowed.
+     */
+    CORS_ORIGINS: z
+      .string()
+      .default('')
+      .transform((v) =>
+        v
+          .split(',')
+          .map((o) => o.trim())
+          .filter(Boolean),
+      ),
+    /**
+     * ADR-016: Web Push (VAPID) keys for the PWA, base64url as printed by
+     * `npx web-push generate-vapid-keys`. Unset: no web push, SMS carries everything.
+     */
+    VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+    VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+    /** Contact for push services (RFC 8292), `mailto:` or `https:`. */
+    VAPID_SUBJECT: z.string().min(1).default('mailto:support@mezgeb.et'),
     /** Outbox poll interval; 0 disables the in-process dispatcher (tests call runOnce). */
     OUTBOX_POLL_MS: z.coerce.number().int().min(0).default(2000),
     /**
@@ -43,6 +64,10 @@ export const envSchema = z
   .refine((env) => !env.DEV_ROUTES || env.NODE_ENV === 'development', {
     path: ['DEV_ROUTES'],
     message: 'DEV_ROUTES is only allowed with NODE_ENV=development',
+  })
+  .refine((env) => !env.VAPID_PUBLIC_KEY === !env.VAPID_PRIVATE_KEY, {
+    path: ['VAPID_PRIVATE_KEY'],
+    message: 'Set both VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY, or neither',
   });
 
 export type AppConfig = z.infer<typeof envSchema>;

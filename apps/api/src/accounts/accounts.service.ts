@@ -1,9 +1,13 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
 import {
   type AcceptAccount,
   type CreateAccount,
+  type Language,
   type ListAccountsQuery,
+  makeInviteCode,
   normalizeEthiopianPhone,
+  normalizeInviteCode,
   type UpdateAccount,
 } from '@mezgeb/shared';
 import { and, asc, eq, gt, type SQL } from 'drizzle-orm';
@@ -15,7 +19,7 @@ import { Clock } from '../common/clock.js';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { AppConfig } from '../config/env.schema.js';
 import { DB, type Db } from '../db/db.module.js';
-import { account, appUser, merchant, merchantStaff } from '../db/schema.js';
+import { account, accountInvite, appUser, merchant, merchantStaff } from '../db/schema.js';
 import {
   assertCurrentTerms,
   findOrCreateUser,
@@ -26,6 +30,21 @@ import { OutboxService } from '../outbox/outbox.service.js';
 import { type AccountView, accountView } from './account.views.js';
 
 /** Which permission each PATCH field needs (ADR-006). */
+/** ADR-016: an invite link works for 14 days; the pending account itself does not expire. */
+export const INVITE_TTL_MS = 14 * 24 * 60 * 60_000;
+
+/** What `GET /v1/invites/:code` shows before sign-in (ADR-016). No phone, no balance. */
+export interface InviteView {
+  code: string;
+  account_id: string;
+  shop: { name: string };
+  /** The SMS language the shop chose, to preselect the language screen. */
+  language: Language;
+  /** `open` until accepted; `expired` after 14 days; `accepted` / `closed` from the account. */
+  state: 'open' | 'expired' | 'accepted' | 'closed';
+  expires_at: string;
+}
+
 const FIELD_ACTIONS: Record<keyof UpdateAccount, AccountAction> = {
   nickname: 'set_nickname',
   location_note: 'set_nickname',
@@ -118,13 +137,14 @@ export class AccountsService {
         objectId: inserted.id,
         after: { merchant_id: inserted.merchantId, customer_user_id: customer.id },
       });
+      const code = await this.createInviteCode(tx, inserted.id, now);
       await this.outbox.notify(tx, {
         merchantId: body.merchant_id,
         userId: customer.id,
         phone: customer.phone,
         event: 'customer_invited',
         template: 'sms.invite',
-        params: { shop: shop.merchant.shopName, link: this.inviteLink(inserted.id) },
+        params: { shop: shop.merchant.shopName, link: this.inviteLink(code) },
         language: customer.language,
       });
       return { created: true, view: accountView(shop.role, inserted, shop.merchant, customer) };
@@ -277,7 +297,62 @@ export class AccountsService {
     return { created: false, view: accountView(role, row, m!, c!) };
   }
 
-  private inviteLink(accountId: string): string {
-    return `${this.config.PUBLIC_WEB_URL.replace(/\/$/, '')}/a/${accountId}`;
+  /** ADR-016: public, before sign-in. Unknown or malformed codes are 404 `invite_not_found`. */
+  async resolveInvite(rawCode: string): Promise<InviteView> {
+    const code = normalizeInviteCode(rawCode);
+    const [row] = code
+      ? await this.db
+          .select({ invite: accountInvite, account, merchant, customer: appUser })
+          .from(accountInvite)
+          .innerJoin(account, eq(account.id, accountInvite.accountId))
+          .innerJoin(merchant, eq(merchant.id, account.merchantId))
+          .innerJoin(appUser, eq(appUser.id, account.customerUserId))
+          .where(eq(accountInvite.code, code))
+      : [];
+    if (!row) {
+      throw new AppError('invite_not_found', 'This invite link is not valid', HttpStatus.NOT_FOUND);
+    }
+    const state =
+      row.account.status === 'closed'
+        ? 'closed'
+        : row.account.status !== 'pending'
+          ? 'accepted'
+          : this.clock.now() >= row.invite.expiresAt
+            ? 'expired'
+            : 'open';
+    return {
+      code: row.invite.code,
+      account_id: row.account.id,
+      shop: { name: row.merchant.shopName },
+      language: row.customer.language,
+      state,
+      expires_at: row.invite.expiresAt.toISOString(),
+    };
+  }
+
+  /** A fresh code for the account; retries on the (very unlikely) collision. */
+  private async createInviteCode(
+    tx: Pick<Db, 'insert'>,
+    accountId: string,
+    now: Date,
+  ): Promise<string> {
+    for (;;) {
+      const code = makeInviteCode((n) => randomBytes(n));
+      const [row] = await tx
+        .insert(accountInvite)
+        .values({
+          code,
+          accountId,
+          createdAt: now,
+          expiresAt: new Date(now.getTime() + INVITE_TTL_MS),
+        })
+        .onConflictDoNothing()
+        .returning({ code: accountInvite.code });
+      if (row) return row.code;
+    }
+  }
+
+  private inviteLink(code: string): string {
+    return `${this.config.PUBLIC_WEB_URL.replace(/\/$/, '')}/i/${code}`;
   }
 }

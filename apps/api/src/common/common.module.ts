@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { AppConfig } from '../config/env.schema.js';
 import { DisabledPushSender, FakePushSender, PushSender } from '../push/push-sender.js';
+import { RoutingPushSender, WebPushSender } from '../push/web-push-sender.js';
 import { ConsoleSmsGateway, SmsGateway } from '../sms/sms-gateway.js';
 import { Clock, SystemClock } from './clock.js';
 
@@ -15,7 +16,16 @@ import { Clock, SystemClock } from './clock.js';
       provide: PushSender,
       inject: [APP_CONFIG],
       useFactory: (config: AppConfig) =>
-        config.PUSH_PROVIDER === 'fake' ? new FakePushSender() : new DisabledPushSender(),
+        new RoutingPushSender(
+          config.PUSH_PROVIDER === 'fake' ? new FakePushSender() : new DisabledPushSender(),
+          config.VAPID_PUBLIC_KEY && config.VAPID_PRIVATE_KEY
+            ? new WebPushSender({
+                publicKey: config.VAPID_PUBLIC_KEY,
+                privateKey: config.VAPID_PRIVATE_KEY,
+                subject: config.VAPID_SUBJECT,
+              })
+            : null,
+        ),
     },
   ],
   exports: [Clock, SmsGateway, PushSender],

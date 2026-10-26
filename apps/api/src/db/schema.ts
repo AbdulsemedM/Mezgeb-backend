@@ -293,6 +293,27 @@ export const account = pgTable(
   ],
 );
 
+/**
+ * ADR-016: the short code in an invite link (`/i/<code>`). Opening it before sign-in shows the
+ * shop's name; the account itself still opens only after an OTP for the invited phone.
+ */
+export const accountInvite = pgTable(
+  'account_invite',
+  {
+    /** 8 characters from INVITE_CODE_ALPHABET (`@mezgeb/shared`). */
+    code: text('code').primaryKey(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => account.id),
+    createdAt: createdAt(),
+    expiresAt: ts('expires_at').notNull(),
+  },
+  (t) => [
+    index('account_invite_account_idx').on(t.accountId),
+    check('account_invite_code_format', sql`${t.code} ~ '^[2-9A-HJKMNP-TV-Z]{8}$'`),
+  ],
+);
+
 /** Two rows max per account: one per side. */
 export const accountLimit = pgTable(
   'account_limit',
