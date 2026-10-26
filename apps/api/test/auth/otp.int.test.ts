@@ -33,7 +33,7 @@ describe('OTP sign-in', () => {
       });
 
       const sms = t.sms.lastTo('+251911000001');
-      expect(sms?.text).toMatch(/^Your Mezgeb code is \d{6}\. It expires in 5 minutes/);
+      expect(sms?.text).toMatch(/^Your Nota code is \d{6}\. It expires in 5 minutes/);
 
       const res = await verify('+251911000001', lastOtp(t, '+251911000001'), ip);
       expect(res.status).toBe(200);
@@ -58,7 +58,7 @@ describe('OTP sign-in', () => {
     it('sends the SMS in Amharic by default', async () => {
       const phone = nextPhone();
       await t.post('/v1/auth/otp', { phone }, { ip: nextIp() });
-      expect(t.sms.lastTo(phone)?.text).toContain('የመዝገብ');
+      expect(t.sms.lastTo(phone)?.text).toContain('የኖታ');
     });
 
     it("sends the SMS in an existing user's language, not the requested one", async () => {
@@ -68,7 +68,7 @@ describe('OTP sign-in', () => {
       await verify(phone, lastOtp(t, phone), ip);
       t.clock.advance(61_000);
       await t.post('/v1/auth/otp', { phone, language: 'en' }, { ip });
-      expect(t.sms.lastTo(phone)?.text).toContain('Koodiin Mezgeb');
+      expect(t.sms.lastTo(phone)?.text).toContain('Koodiin Nota');
     });
 
     it('answers an unknown phone exactly like a known one', async () => {

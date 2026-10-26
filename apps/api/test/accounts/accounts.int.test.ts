@@ -51,7 +51,7 @@ describe('accounts', () => {
       expect(await t.outbox.runOnce()).toBeGreaterThanOrEqual(1);
       // ADR-016: the link carries an 8-character invite code.
       expect(t.sms.lastTo('+251911223344')?.text).toMatch(
-        /^Tigist Mini Market added you to Mezgeb, your shared dube book\. See every purchase and your balance: http:\/\/localhost:5173\/i\/[2-9A-HJKMNP-TV-Z]{8}$/,
+        /^Tigist Mini Market added you to Nota, your shared dube book\. See every purchase and your balance: http:\/\/localhost:5173\/i\/[2-9A-HJKMNP-TV-Z]{8}$/,
       );
       const [row] = await t
         .db!.db.select()
@@ -80,7 +80,7 @@ describe('accounts', () => {
         { token: shop.owner.accessToken },
       );
       await t.outbox.runOnce();
-      expect(t.sms.lastTo(phone)?.text).toMatch(/^Tigist Mini Market Mezgeb irratti/);
+      expect(t.sms.lastTo(phone)?.text).toMatch(/^Tigist Mini Market Nota irratti/);
     });
 
     it('defaults the SMS to Amharic for a new phone', async () => {
@@ -88,7 +88,7 @@ describe('accounts', () => {
       const phone = nextPhone();
       await t.post('/v1/accounts', inviteBody(shop, phone), { token: shop.owner.accessToken });
       await t.outbox.runOnce();
-      expect(t.sms.lastTo(phone)?.text).toContain('በመዝገብ');
+      expect(t.sms.lastTo(phone)?.text).toContain('በኖታ');
     });
 
     it('is idempotent: a retry returns the original and queues no second SMS', async () => {

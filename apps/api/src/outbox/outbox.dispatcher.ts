@@ -131,7 +131,7 @@ export class OutboxDispatcher implements OnApplicationBootstrap, OnApplicationSh
     const body = t(payload.template, payload.language, payload.params);
     const { invalidTokens } = await this.push.send({
       tokens: tokens.map((d) => d.token),
-      title: 'Mezgeb',
+      title: 'Nota',
       body,
       sound: rule?.sound ?? false,
       data: {

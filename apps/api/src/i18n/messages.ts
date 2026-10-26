@@ -7,15 +7,15 @@ import type { Language } from '@mezgeb/shared';
  */
 const messages = {
   'sms.otp': {
-    en: 'Your Mezgeb code is {code}. It expires in {minutes} minutes. Never share it.',
-    am: 'የመዝገብ ማረጋገጫ ኮድዎ {code} ነው። በ{minutes} ደቂቃ ውስጥ ያበቃል። ለማንም አያጋሩ።',
-    om: 'Koodiin Mezgeb keessan {code} dha. Daqiiqaa {minutes} keessatti ni dhumata. Nama kamiifuu hin qoodinaa.',
+    en: 'Your Nota code is {code}. It expires in {minutes} minutes. Never share it.',
+    am: 'የኖታ ማረጋገጫ ኮድዎ {code} ነው። በ{minutes} ደቂቃ ውስጥ ያበቃል። ለማንም አያጋሩ።',
+    om: 'Koodiin Nota keessan {code} dha. Daqiiqaa {minutes} keessatti ni dhumata. Nama kamiifuu hin qoodinaa.',
   },
   // Pilot kit "Invite" template.
   'sms.invite': {
-    en: '{shop} added you to Mezgeb, your shared dube book. See every purchase and your balance: {link}',
-    am: '{shop} በመዝገብ ላይ አክሎዎታል፤ የጋራ የዱቤ ደብተርዎ ነው። እያንዳንዱን ግዢና ቀሪ ሂሳብዎን ይመልከቱ፦ {link}',
-    om: '{shop} Mezgeb irratti isin dabaleera, kitaaba dube keessan kan waliinii. Bittaa hundaafi haftee keessan ilaalaa: {link}',
+    en: '{shop} added you to Nota, your shared dube book. See every purchase and your balance: {link}',
+    am: '{shop} በኖታ ላይ አክሎዎታል፤ የጋራ የዱቤ ደብተርዎ ነው። እያንዳንዱን ግዢና ቀሪ ሂሳብዎን ይመልከቱ፦ {link}',
+    om: '{shop} Nota irratti isin dabaleera, kitaaba dube keessan kan waliinii. Bittaa hundaafi haftee keessan ilaalaa: {link}',
   },
   // ADR-011: the shop asks to go over the customer's hard stop once.
   'sms.raise_code': {
@@ -62,9 +62,9 @@ const messages = {
   },
   // ADR-003: an offline entry named a representative the customer had removed or paused.
   'sms.rep_inactive_entry': {
-    en: '{shop}: {amount} was recorded as taken by {name}, whom you removed or paused. Check it in Mezgeb.',
-    am: '{shop}፦ {amount} በ{name} እንደተወሰደ ተመዝግቧል፤ {name} ከዝርዝርዎ ተሰርዟል ወይም ቆሟል። በመዝገብ ይመልከቱ።',
-    om: '{shop}: {amount} akka {name}n fudhatametti galmeeffameera; {name} haqameera ykn dhaabbateera. Mezgeb keessatti ilaalaa.',
+    en: '{shop}: {amount} was recorded as taken by {name}, whom you removed or paused. Check it in Nota.',
+    am: '{shop}፦ {amount} በ{name} እንደተወሰደ ተመዝግቧል፤ {name} ከዝርዝርዎ ተሰርዟል ወይም ቆሟል። በኖታ ይመልከቱ።',
+    om: '{shop}: {amount} akka {name}n fudhatametti galmeeffameera; {name} haqameera ykn dhaabbateera. Nota keessatti ilaalaa.',
   },
   // Notifications matrix: representative's own limit.
   'sms.rep_limit': {
@@ -85,15 +85,15 @@ const messages = {
   },
   // "Entry disputed" — to the merchant (push from M10; SMS until then).
   'sms.dispute': {
-    en: '{customer} disputed a {amount} entry: {reason}. Open Mezgeb to resolve it.',
-    am: '{customer} የ{amount} መዝገብን ተቃውመዋል፦ {reason}። ለመፍታት መዝገብን ይክፈቱ።',
-    om: '{customer} galmee {amount} mormaniiru: {reason}. Furuuf Mezgeb banaa.',
+    en: '{customer} disputed a {amount} entry: {reason}. Open Nota to resolve it.',
+    am: '{customer} የ{amount} መዝገብን ተቃውመዋል፦ {reason}። ለመፍታት ኖታን ይክፈቱ።',
+    om: '{customer} galmee {amount} mormaniiru: {reason}. Furuuf Nota banaa.',
   },
   // ADR-012: staff asked the owner to correct an entry.
   'sms.correction_request': {
-    en: 'Your staff asked to correct an entry for {customer} by {amount}: {reason}. Open Mezgeb to answer.',
-    am: 'ሰራተኛዎ የ{customer}ን መዝገብ በ{amount} እንዲታረም ጠይቀዋል፦ {reason}። ለመመለስ መዝገብን ይክፈቱ።',
-    om: 'Hojjetaan keessan galmee {customer} {amount}n akka sirreeffamu gaafateera: {reason}. Deebisuuf Mezgeb banaa.',
+    en: 'Your staff asked to correct an entry for {customer} by {amount}: {reason}. Open Nota to answer.',
+    am: 'ሰራተኛዎ የ{customer}ን መዝገብ በ{amount} እንዲታረም ጠይቀዋል፦ {reason}። ለመመለስ ኖታን ይክፈቱ።',
+    om: 'Hojjetaan keessan galmee {customer} {amount}n akka sirreeffamu gaafateera: {reason}. Deebisuuf Nota banaa.',
   },
   // M11 statement PDF (LED-7, US-14).
   'statement.title': { en: 'Dube statement', am: 'የዱቤ መግለጫ', om: 'Ibsa dube' },
@@ -131,9 +131,9 @@ const messages = {
     om: 'Lakkoofsa galmee dhumaa {seq}, koodii mirkaneessaa {hash}',
   },
   'statement.generated': {
-    en: 'Made by Mezgeb on {date}. Mezgeb never adds interest or fees.',
-    am: 'በመዝገብ በ{date} የተዘጋጀ። መዝገብ ወለድ ወይም ክፍያ አይጨምርም።',
-    om: "Mezgeb'n {date} qophaa'e. Mezgeb dhala ykn kaffaltii hin dabalu.",
+    en: 'Made by Nota on {date}. Nota never adds interest or fees.',
+    am: 'በኖታ በ{date} የተዘጋጀ። ኖታ ወለድ ወይም ክፍያ አይጨምርም።',
+    om: "Notaan {date} qophaa'e. Nota dhala ykn kaffaltii hin dabalu.",
   },
   // ADR-013 payments.
   'sms.payment_recorded': {
@@ -157,9 +157,9 @@ const messages = {
     om: 'Hanga {date} kaffalaa. ',
   },
   'sms.payment_reported': {
-    en: '{customer} says they paid {amount} by {method}. Open Mezgeb to confirm it.',
-    am: '{customer} {amount} በ{method} እንደከፈሉ ይናገራሉ። ለማረጋገጥ መዝገብን ይክፈቱ።',
-    om: '{customer} {amount} {method}n akka kaffalan himu. Mirkaneessuuf Mezgeb banaa.',
+    en: '{customer} says they paid {amount} by {method}. Open Nota to confirm it.',
+    am: '{customer} {amount} በ{method} እንደከፈሉ ይናገራሉ። ለማረጋገጥ ኖታን ይክፈቱ።',
+    om: '{customer} {amount} {method}n akka kaffalan himu. Mirkaneessuuf Nota banaa.',
   },
   'sms.payment_confirmed': {
     en: '{shop} confirmed your payment of {amount}. New balance: {balance}.',
@@ -179,9 +179,9 @@ const messages = {
   'payment_method.other': { en: 'another way', am: 'በሌላ መንገድ', om: 'karaa biraa' },
   // ADR-014 delivery orders.
   'sms.order_received': {
-    en: 'New delivery order from {customer} ({count} items). Open Mezgeb to answer it.',
-    am: 'ከ{customer} አዲስ የማድረስ ትዕዛዝ ({count} ዕቃዎች)። ለመመለስ መዝገብን ይክፈቱ።',
-    om: 'Ajaja geejjibaa haaraa {customer} irraa (meeshaa {count}). Deebisuuf Mezgeb banaa.',
+    en: 'New delivery order from {customer} ({count} items). Open Nota to answer it.',
+    am: 'ከ{customer} አዲስ የማድረስ ትዕዛዝ ({count} ዕቃዎች)። ለመመለስ ኖታን ይክፈቱ።',
+    om: 'Ajaja geejjibaa haaraa {customer} irraa (meeshaa {count}). Deebisuuf Nota banaa.',
   },
   'sms.order_priced': {
     en: '{shop} priced your order: {total}. It will be on its way soon.',
@@ -236,9 +236,9 @@ const messages = {
     om: '{shop} daangaa dube keessan jijjiireera.',
   },
   'sms.payment_report_reminder': {
-    en: '{customer} reported a payment of {amount} two days ago. Open Mezgeb to confirm or reject it.',
-    am: '{customer} ከሁለት ቀን በፊት የ{amount} ክፍያ ሪፖርት አድርገዋል። ለማረጋገጥ ወይም ለመቃወም መዝገብን ይክፈቱ።',
-    om: '{customer} guyyaa lama dura kaffaltii {amount} gabaasaniiru. Mirkaneessuuf ykn diduuf Mezgeb banaa.',
+    en: '{customer} reported a payment of {amount} two days ago. Open Nota to confirm or reject it.',
+    am: '{customer} ከሁለት ቀን በፊት የ{amount} ክፍያ ሪፖርት አድርገዋል። ለማረጋገጥ ወይም ለመቃወም ኖታን ይክፈቱ።',
+    om: '{customer} guyyaa lama dura kaffaltii {amount} gabaasaniiru. Mirkaneessuuf ykn diduuf Nota banaa.',
   },
 } as const satisfies Record<string, Record<Language, string>>;
 
