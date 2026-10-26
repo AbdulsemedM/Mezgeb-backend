@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { languageSchema } from './auth.js';
 
-/** Version of the dube agreement text the client displayed (ADR-006). */
-export const CURRENT_TERMS_VERSION = 'dube-2026-10';
+// Plain constants live in ../terms.ts, so the PWA can use them without zod.
+export { CURRENT_TERMS_VERSION } from '../terms.js';
 
 export const detailModeSchema = z.enum(['simple', 'detailed']);
 export type DetailMode = z.infer<typeof detailModeSchema>;
