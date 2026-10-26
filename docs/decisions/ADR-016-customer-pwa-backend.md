@@ -49,6 +49,11 @@ Every OTP SMS ends with a line `@<PUBLIC_WEB_URL host> #<code>`, so Android Chro
   so with FCM off but VAPID on, the PWA gets pushes and the app still gets SMS.
 - Web push is on when `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` are set.
 
+### One-time raises in the PWA (added for W5)
+`GET /v1/accounts/{id}/raises` lists the raise requests still waiting (pending, not expired),
+newest first, with the `approve_raise` permission. The PWA shows them so the customer approves
+without a code (ADR-011). Approving stays online only.
+
 ### Served by the PWA, not the API
 The web manifest and `/.well-known/assetlinks.json` (package `et.mezgeb.app`, release
 certificate fingerprint at build time) are static files of the PWA.
