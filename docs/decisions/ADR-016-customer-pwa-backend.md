@@ -54,6 +54,16 @@ Every OTP SMS ends with a line `@<PUBLIC_WEB_URL host> #<code>`, so Android Chro
 newest first, with the `approve_raise` permission. The PWA shows them so the customer approves
 without a code (ADR-011). Approving stays online only.
 
+### Payments in the PWA (added for W6)
+- `POST /v1/payme-requests/{id}/seen` (customer only): `sent` becomes `seen` when the customer
+  opens the request; later statuses stay. Idempotent. This is ADR-013's `seen`.
+- Receipt photos: `PUT /v1/payment-reports/{id}/receipt` takes the raw image (JPEG, PNG or WebP,
+  at most 600 KB; the PWA compresses it first) from the customer, while the report is not yet
+  reviewed. It is stored through `ObjectStorage` (S3/MinIO; in memory in tests) at
+  `receipts/<account>/<report>`, and `payment_report.screenshot_url` keeps the key. PUT replaces,
+  so retries are safe. `GET` on the same path serves it to the owner and the customer (never
+  staff: money). Report views carry `has_receipt`.
+
 ### Served by the PWA, not the API
 The web manifest and `/.well-known/assetlinks.json` (package `et.mezgeb.app`, release
 certificate fingerprint at build time) are static files of the PWA.

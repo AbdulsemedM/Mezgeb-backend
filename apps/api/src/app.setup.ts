@@ -17,6 +17,11 @@ export function configureApp<T extends INestApplication>(app: T): T {
     credentials: true,
     maxAge: 86_400,
   });
+  // ADR-016: receipt photos arrive as raw image bodies (the service checks size and type).
+  (app as unknown as NestExpressApplication).useBodyParser('raw', {
+    type: ['image/jpeg', 'image/png', 'image/webp'],
+    limit: '1mb',
+  });
   app.setGlobalPrefix('v1');
   app.useGlobalFilters(new HttpExceptionFilter());
   app.enableShutdownHooks();

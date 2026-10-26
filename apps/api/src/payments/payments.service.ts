@@ -7,7 +7,7 @@ import {
   type RejectPaymentReport,
   uuidv7,
 } from '@mezgeb/shared';
-import { asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import { type AccountAccess, AccessService } from '../access/access.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AppError } from '../common/app-error.js';
@@ -19,6 +19,7 @@ import { EntriesService } from '../ledger/entries.service.js';
 import { idConflict } from '../merchants/merchants.service.js';
 import { OutboxService } from '../outbox/outbox.service.js';
 import { displayDate } from '../statements/statements.service.js';
+import { ObjectStorage, type StoredObject } from '../storage/object-storage.js';
 
 type PaymeRow = typeof paymeRequest.$inferSelect;
 type ReportRow = typeof paymentReport.$inferSelect;
@@ -59,7 +60,13 @@ export interface PaymentReportView {
   resubmitted_from_id: string | null;
   reviewed_at: string | null;
   created_at: string;
+  /** A receipt photo was attached (`GET /v1/payment-reports/{id}/receipt`, ADR-016). */
+  has_receipt: boolean;
 }
+
+/** ADR-016: receipt photos are compressed on the phone; anything bigger is refused. */
+export const MAX_RECEIPT_BYTES = 600 * 1024;
+export const RECEIPT_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
 export function paymentReportView(r: ReportRow): PaymentReportView {
   return {
@@ -74,6 +81,7 @@ export function paymentReportView(r: ReportRow): PaymentReportView {
     resubmitted_from_id: r.resubmittedFromId,
     reviewed_at: r.reviewedAt?.toISOString() ?? null,
     created_at: r.createdAt.toISOString(),
+    has_receipt: r.screenshotUrl !== null,
   };
 }
 
@@ -92,6 +100,7 @@ export class PaymentsService {
     private readonly audit: AuditService,
     private readonly outbox: OutboxService,
     private readonly entries: EntriesService,
+    private readonly storage: ObjectStorage,
   ) {}
 
   /** Online, owner only. The SMS carries the shop's payment details. 201, or 200 on retry. */
@@ -170,6 +179,92 @@ export class PaymentsService {
       .where(eq(paymeRequest.accountId, a.account.id))
       .orderBy(desc(paymeRequest.createdAt));
     return { payme_requests: rows.map(paymeView) };
+  }
+
+  /**
+   * ADR-013 `seen`: the customer opened the request in the PWA. Only `sent` moves to `seen`;
+   * any later status (partly paid, paid, expired) stays. Idempotent.
+   */
+  async markPaymeSeen(userId: string, paymeId: string): Promise<PaymeView> {
+    const row = UUID.test(paymeId)
+      ? (await this.db.select().from(paymeRequest).where(eq(paymeRequest.id, paymeId)))[0]
+      : undefined;
+    if (!row) throw new AppError('not_found', 'Pay-me request not found', HttpStatus.NOT_FOUND);
+    await this.access.requireAccount(userId, row.accountId, 'report_payment');
+    if (row.status !== 'sent') return paymeView(row);
+    const now = this.clock.now();
+    const [updated] = await this.db
+      .update(paymeRequest)
+      .set({ status: 'seen', seenAt: now, updatedAt: now })
+      .where(and(eq(paymeRequest.id, row.id), eq(paymeRequest.status, 'sent')))
+      .returning();
+    return paymeView(updated ?? row);
+  }
+
+  /**
+   * ADR-016: the customer attaches a receipt photo to their report while the shop has not
+   * reviewed it. PUT is idempotent: sending again replaces the same object.
+   */
+  async putReceipt(
+    userId: string,
+    reportId: string,
+    bytes: Buffer | undefined,
+    contentType: string | undefined,
+  ): Promise<PaymentReportView> {
+    const report = await this.loadReport(reportId);
+    await this.access.requireAccount(userId, report.accountId, 'report_payment');
+    const type = RECEIPT_TYPES.find((x) => x === contentType);
+    if (!type || !bytes) {
+      throw new AppError(
+        'unsupported_receipt_type',
+        'Send the receipt as a JPEG, PNG or WebP image',
+        HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+      );
+    }
+    if (bytes.length === 0 || bytes.length > MAX_RECEIPT_BYTES) {
+      throw new AppError(
+        'receipt_too_large',
+        'The receipt photo is too large',
+        HttpStatus.PAYLOAD_TOO_LARGE,
+        { max_bytes: MAX_RECEIPT_BYTES },
+      );
+    }
+    this.assertReported(report);
+    const key = `receipts/${report.accountId}/${report.id}`;
+    await this.storage.put(key, bytes, type);
+    const now = this.clock.now();
+    return this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(paymentReport)
+        .set({ screenshotUrl: key, updatedAt: now })
+        .where(eq(paymentReport.id, report.id))
+        .returning();
+      await this.audit.record(tx, {
+        actorUserId: userId,
+        action: 'payment_report.receipt',
+        objectType: 'payment_report',
+        objectId: report.id,
+        after: { bytes: bytes.length, content_type: type },
+      });
+      return paymentReportView(row!);
+    });
+  }
+
+  /** The receipt photo, for the owner and the customer (money: never staff, ADR-003). */
+  async getReceipt(userId: string, reportId: string): Promise<StoredObject> {
+    const report = await this.loadReport(reportId);
+    await this.access.requireAccount(userId, report.accountId, 'view_balance');
+    const found = report.screenshotUrl ? await this.storage.get(report.screenshotUrl) : null;
+    if (!found) throw new AppError('not_found', 'No receipt photo', HttpStatus.NOT_FOUND);
+    return found;
+  }
+
+  private async loadReport(reportId: string): Promise<ReportRow> {
+    const report = UUID.test(reportId)
+      ? (await this.db.select().from(paymentReport).where(eq(paymentReport.id, reportId)))[0]
+      : undefined;
+    if (!report) throw new AppError('not_found', 'Payment report not found', HttpStatus.NOT_FOUND);
+    return report;
   }
 
   /** PAY-2, the customer: "I paid". It changes nothing until the owner confirms it. */

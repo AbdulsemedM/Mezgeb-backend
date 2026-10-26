@@ -1,5 +1,6 @@
 import { RemindersService } from '../../src/ledger/reminders.service.js';
 import { FakePushSender, PushSender } from '../../src/push/push-sender.js';
+import { MemoryObjectStorage, ObjectStorage } from '../../src/storage/object-storage.js';
 import 'reflect-metadata';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -36,6 +37,8 @@ export interface TestApp {
   outbox: OutboxDispatcher;
   /** In-memory push (ADR-015): pushes go here once a device has a token. */
   push: FakePushSender;
+  /** In-memory object storage (receipt photos). */
+  storage: MemoryObjectStorage;
   /** Scheduled reminders; the timer is off in tests, call `runOnce()`. */
   reminders: RemindersService;
   /** Direct DB access; unset with `ownContainer`. */
@@ -91,6 +94,7 @@ export async function startTestApp(
   const clock = new FakeClock();
   const sms = new ConsoleSmsGateway();
   const push = new FakePushSender();
+  const storage = new MemoryObjectStorage();
   const moduleRef = await Test.createTestingModule({
     imports: [
       AppModule.forRoot({ ...TEST_ENV, ...opts.env, DATABASE_URL: databaseUrl }),
@@ -103,6 +107,8 @@ export async function startTestApp(
     .useValue(sms)
     .overrideProvider(PushSender)
     .useValue(push)
+    .overrideProvider(ObjectStorage)
+    .useValue(storage)
     .compile();
   const app = configureApp(moduleRef.createNestApplication());
   await app.listen(0, '127.0.0.1');
@@ -130,6 +136,7 @@ export async function startTestApp(
     sms,
     outbox: app.get(OutboxDispatcher),
     push,
+    storage,
     reminders: app.get(RemindersService),
     db: testDb,
     container,

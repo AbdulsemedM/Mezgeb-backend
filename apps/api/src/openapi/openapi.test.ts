@@ -17,8 +17,8 @@ describe('OpenAPI (M12)', () => {
       (r) =>
         ['post', 'put', 'patch'].includes(r.method) &&
         !r.body &&
-        // Bodiless actions: the path says everything.
-        !/\/(accept|confirm|logout)$/.test(r.path),
+        // Bodiless actions: the path says everything. A receipt is a raw image (ADR-016).
+        !/\/(accept|confirm|logout|seen|receipt)$/.test(r.path),
     );
     expect(unvalidated.map((r) => `${r.method} ${r.path}`)).toEqual([]);
   });

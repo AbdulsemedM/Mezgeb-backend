@@ -3624,9 +3624,136 @@
         }
       }
     },
+    "/v1/payme-requests/{id}/seen": {
+      "post": {
+        "operationId": "Payments.seen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Error: `{ code, message, details? }` (CLAUDE.md conventions)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "details": {}
+                  }
+                }
+              }
+            }
+          },
+          "2XX": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/v1/payment-reports/{id}/confirm": {
       "post": {
         "operationId": "Payments.confirm",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Error: `{ code, message, details? }` (CLAUDE.md conventions)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "details": {}
+                  }
+                }
+              }
+            }
+          },
+          "2XX": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/v1/payment-reports/{id}/receipt": {
+      "get": {
+        "operationId": "Payments.getReceipt",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Error: `{ code, message, details? }` (CLAUDE.md conventions)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "details": {}
+                  }
+                }
+              }
+            }
+          },
+          "2XX": {
+            "description": "Success"
+          }
+        }
+      },
+      "put": {
+        "operationId": "Payments.putReceipt",
         "parameters": [
           {
             "name": "id",

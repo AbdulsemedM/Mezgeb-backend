@@ -196,6 +196,10 @@ Customer PWA backend (W0, ADR-016):
 - Web Push: push token `webpush:` + PushSubscription JSON; `RoutingPushSender` splits FCM and
   VAPID (`WebPushSender`); `PushSender.accepts(token)`. `GET /v1/devices/web-push-key` is public.
 - `t.get/post(..., { headers })` sends extra headers (cookies); responses carry `headers`.
+- Files: `ObjectStorage` (`src/storage/object-storage.ts`, S3/MinIO; `t.storage` in memory in
+  tests). Receipt photos: raw image bodies (`useBodyParser('raw')` for image types),
+  `PUT/GET /v1/payment-reports/{id}/receipt`. Pay-me `seen`: `POST /v1/payme-requests/{id}/seen`.
+  Raises waiting for the customer: `GET /v1/accounts/{id}/raises`.
 
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 
