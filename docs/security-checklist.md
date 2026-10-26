@@ -12,6 +12,7 @@ Run through this before each release. "Test" names the automated check; the rest
   overwrites `X-Forwarded-For`.
 - [ ] Production SMS gateway configured; dev routes off (`DEV_ROUTES` refuses to start outside
   development).
+- [ ] `OTP_FIXED_CODE` unset, so sign-in codes are random again (the API logs a warning while it is set).
 
 ## Tokens and devices
 

@@ -17,6 +17,14 @@ export const envSchema = z
     JWT_SECRET: z.string().min(32),
     /** HMAC key for OTP codes at rest. */
     OTP_PEPPER: z.string().min(32),
+    /**
+     * Every OTP is this code instead of a random one, until a real SMS gateway exists.
+     * Unset: random codes. Remove before launch.
+     */
+    OTP_FIXED_CODE: z
+      .string()
+      .regex(/^\d{6}$/, 'must be 6 digits')
+      .optional(),
     /** Trust X-Forwarded-For (behind a load balancer) for per-IP OTP limits. */
     TRUST_PROXY: z.stringbool().default(false),
     /** Base URL of the customer PWA; invite links point here (ADR-006). */

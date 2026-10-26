@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+// Plain helpers live in ../session.ts, so the PWA can use them without zod.
+export { refreshSigningInput, webRefreshSigningInput, WEB_PUSH_TOKEN_PREFIX } from '../session.js';
+
 export const languageSchema = z.enum(['am', 'om', 'en']);
 export type Language = z.infer<typeof languageSchema>;
 
@@ -40,11 +43,6 @@ export const refreshRequestSchema = z.object({
 });
 export type RefreshRequest = z.infer<typeof refreshRequestSchema>;
 
-/** The exact string a device signs to refresh its session (ADR-005). */
-export function refreshSigningInput(refreshToken: string): string {
-  return `mezgeb-refresh-v1:${refreshToken}`;
-}
-
 /**
  * `POST /v1/auth/web/refresh` (ADR-016): the refresh token comes from the cookie, which the PWA
  * cannot read, so it signs the token's public id (`refresh_id` from the last sign-in or refresh).
@@ -55,14 +53,6 @@ export const webRefreshRequestSchema = z.object({
   device_sig: z.base64().max(256),
 });
 export type WebRefreshRequest = z.infer<typeof webRefreshRequestSchema>;
-
-/** The exact string the PWA signs to refresh its cookie session (ADR-016). */
-export function webRefreshSigningInput(refreshId: string): string {
-  return `mezgeb-refresh-web-v1:${refreshId}`;
-}
-
-/** Prefix of a Web Push subscription stored as a device's push token (ADR-016). */
-export const WEB_PUSH_TOKEN_PREFIX = 'webpush:';
 
 /** A browser's PushSubscription JSON (Web Push, RFC 8030 / 8291). */
 export const webPushSubscriptionSchema = z.object({

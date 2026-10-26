@@ -1,5 +1,5 @@
 import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import {
   type DeviceRegistration,
   type Language,
@@ -49,6 +49,8 @@ export class OtpService {
   private readonly pepper: string;
   /** ADR-016: the PWA's host, for the WebOTP line Android Chrome reads (`@host #code`). */
   private readonly webOtpHost: string;
+  /** OTP_FIXED_CODE: used instead of a random code until an SMS gateway exists. */
+  private readonly fixedCode: string | undefined;
 
   constructor(
     @Inject(DB) private readonly db: Db,
@@ -60,6 +62,10 @@ export class OtpService {
   ) {
     this.pepper = config.OTP_PEPPER;
     this.webOtpHost = new URL(config.PUBLIC_WEB_URL).host;
+    this.fixedCode = config.OTP_FIXED_CODE;
+    if (this.fixedCode) {
+      new Logger(OtpService.name).warn('OTP_FIXED_CODE is set: every sign-in code is the same');
+    }
   }
 
   /** Sends a code. Answers the same whether or not the phone has an account. */
@@ -69,7 +75,7 @@ export class OtpService {
     ip: string,
   ): Promise<OtpRequested> {
     const phone = normalizePhone(rawPhone);
-    const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
+    const code = this.fixedCode ?? String(randomInt(0, 1_000_000)).padStart(6, '0');
     const now = this.clock.now();
     const expiresAt = new Date(now.getTime() + OTP_TTL_MS);
 
