@@ -64,6 +64,10 @@ without a code (ADR-011). Approving stays online only.
   so retries are safe. `GET` on the same path serves it to the owner and the customer (never
   staff: money). Report views carry `has_receipt`.
 
+### Orders in the PWA (added for W7)
+`GET /v1/accounts/{id}/catalogue` (customer, `send_order`) lists the shop's items as id, name and
+unit, for picking an order. No prices or search aliases: the shop prices each order (ADR-014).
+
 ### Served by the PWA, not the API
 The web manifest and `/.well-known/assetlinks.json` (package `et.mezgeb.app`, release
 certificate fingerprint at build time) are static files of the PWA.

@@ -38,6 +38,15 @@ export class OrdersController {
     return view;
   }
 
+  /** ADR-016: the shop's items for the customer's order screen (names and units only). */
+  @Get('accounts/:id/catalogue')
+  @AccountActionRequired('send_order')
+  catalogue(
+    @CurrentAccountAccess() a: AccountAccess,
+  ): Promise<{ items: { id: string; name: string; unit: string | null }[] }> {
+    return this.orders.catalogueForCustomer(a);
+  }
+
   @Get('accounts/:id/orders')
   @AccountActionRequired('view_account')
   list(@CurrentAccountAccess() a: AccountAccess): Promise<{ orders: OrderView[] }> {

@@ -63,6 +63,40 @@ describe('delivery orders (M9, ADR-014, US-12)', () => {
       orderId,
     });
 
+  it('ADR-016: the customer sees the shop’s items to order, without prices', async () => {
+    const { owner, customer, accountId } = await setup();
+    await postEntry(
+      t,
+      owner,
+      accountId,
+      purchaseBody(t, owner, accountId, {
+        amount: 7_000,
+        lines: [
+          {
+            name: 'Teff',
+            qty: '1',
+            unit: 'kg',
+            unit_price: 6_000,
+            amount: 6_000,
+            source: 'manual',
+          },
+          { name: 'Bread', qty: '2', unit_price: 500, amount: 1_000, source: 'manual' },
+        ],
+      }),
+    );
+    const res = await t.get(`/v1/accounts/${accountId}/catalogue`, { token: customer.accessToken });
+    expect(res.status).toBe(200);
+    expect(res.body.items.map((i: { name: string }) => i.name)).toEqual(['Bread', 'Teff']);
+    expect(res.body.items.find((i: { name: string }) => i.name === 'Teff')).toEqual({
+      id: expect.any(String),
+      name: 'Teff',
+      unit: 'kg',
+    });
+    // Only the customer orders (ADR-014); the shop has its own catalogue route.
+    const owners = await t.get(`/v1/accounts/${accountId}/catalogue`, { token: owner.accessToken });
+    expect(owners.status).toBe(403);
+  });
+
   it('US-12: send, accept, price, out, delivered as one Delivery entry', async () => {
     const { owner, staff, customer, accountId, phone } = await setup();
     const sent = await sendOrder(customer, accountId);

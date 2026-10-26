@@ -199,7 +199,8 @@ Customer PWA backend (W0, ADR-016):
 - Files: `ObjectStorage` (`src/storage/object-storage.ts`, S3/MinIO; `t.storage` in memory in
   tests). Receipt photos: raw image bodies (`useBodyParser('raw')` for image types),
   `PUT/GET /v1/payment-reports/{id}/receipt`. Pay-me `seen`: `POST /v1/payme-requests/{id}/seen`.
-  Raises waiting for the customer: `GET /v1/accounts/{id}/raises`.
+  Raises waiting for the customer: `GET /v1/accounts/{id}/raises`. The customer's catalogue
+  (names and units, no prices): `GET /v1/accounts/{id}/catalogue`.
 
 Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations in `apps/api/drizzle/`):
 

@@ -387,6 +387,50 @@
         }
       }
     },
+    "/v1/accounts/{id}/catalogue": {
+      "get": {
+        "operationId": "Orders.catalogue",
+        "x-account-action": "send_order",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Error: `{ code, message, details? }` (CLAUDE.md conventions)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "details": {}
+                  }
+                }
+              }
+            }
+          },
+          "2XX": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/v1/accounts/{id}/chain/verify": {
       "get": {
         "operationId": "Ledger.verify",

@@ -9,14 +9,14 @@ import {
   type PriceOrder,
   uuidv7,
 } from '@mezgeb/shared';
-import { desc, eq } from 'drizzle-orm';
+import { asc, desc, eq } from 'drizzle-orm';
 import { type AccountAccess, AccessService } from '../access/access.service.js';
 import { type AccountAction } from '../access/permissions.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AppError } from '../common/app-error.js';
 import { Clock } from '../common/clock.js';
 import { DB, type Db } from '../db/db.module.js';
-import { appUser, deliveryOrder, merchantStaff } from '../db/schema.js';
+import { appUser, catalogueItem, deliveryOrder, merchantStaff } from '../db/schema.js';
 import { DisputesService } from '../ledger/disputes.service.js';
 import { idConflict } from '../merchants/merchants.service.js';
 import type { NotificationEvent } from '../outbox/notification-rules.js';
@@ -76,6 +76,21 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  */
 @Injectable()
 export class OrdersService {
+  /**
+   * ADR-016: what the customer can pick when ordering. Names and units only: the shop prices
+   * each order (ADR-014), and last prices or the shop's search aliases are not shown.
+   */
+  async catalogueForCustomer(
+    a: AccountAccess,
+  ): Promise<{ items: { id: string; name: string; unit: string | null }[] }> {
+    const rows = await this.db
+      .select({ id: catalogueItem.id, name: catalogueItem.name, unit: catalogueItem.unit })
+      .from(catalogueItem)
+      .where(eq(catalogueItem.merchantId, a.account.merchantId))
+      .orderBy(asc(catalogueItem.name));
+    return { items: rows };
+  }
+
   constructor(
     @Inject(DB) private readonly db: Db,
     private readonly clock: Clock,
