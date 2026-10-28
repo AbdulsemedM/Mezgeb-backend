@@ -18,7 +18,9 @@ Environment (see `apps/api/src/config/env.schema.ts`; the API refuses to start i
 
 ## Vercel (ADR-017)
 
-Two Vercel projects from the GitHub repositories, both Hobby:
+Two Vercel projects (team "Abdu's projects", Hobby), deployed with `vercel deploy --prod` from each repository
+(linked with `vercel link`): `mezgeb-api` at https://mezgeb-api-gray.vercel.app and `mezgeb-pwa` at
+https://mezgeb-pwa.vercel.app. The mobile app's prod flavor defaults to these. `.vercelignore` keeps `.env` out of uploads.
 
 **API**: repository `Mezgeb-backend`, Root Directory `apps/api` (leave "Include files outside
 the root directory" on; the workspace builds `@mezgeb/shared`). Everything else comes from
