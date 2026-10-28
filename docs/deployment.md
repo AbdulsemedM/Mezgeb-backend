@@ -1,6 +1,6 @@
 # Deployment (M12)
 
-Hosting and domains are not chosen yet. This is what any host needs.
+Hosting: Vercel + Neon + Cloudflare R2 (ADR-017, see "Vercel" below). The image works on any other host.
 
 ## The image
 
@@ -15,6 +15,37 @@ Environment (see `apps/api/src/config/env.schema.ts`; the API refuses to start i
 `DATABASE_URL`, `S3_*`, `JWT_SECRET`, `OTP_PEPPER` (both at least 32 random chars), `NODE_ENV=production`
 (set in the image), `TRUST_PROXY=true` behind a load balancer, `PUBLIC_WEB_URL`, `PUSH_PROVIDER`,
 `SMS_CAP_*`. Never set `DEV_ROUTES` in production; the API refuses it.
+
+## Vercel (ADR-017)
+
+Two Vercel projects from the GitHub repositories, both Hobby:
+
+**API**: repository `Mezgeb-backend`, Root Directory `apps/api` (leave "Include files outside
+the root directory" on; the workspace builds `@mezgeb/shared`). Everything else comes from
+`apps/api/vercel.json`. Environment (Production):
+
+| Variable | Value |
+| --- | --- |
+| `NODE_ENV` | `production` |
+| `DATABASE_URL` | Neon pooled URL (`…-pooler…/neondb?sslmode=verify-full`) |
+| `DATABASE_URL_UNPOOLED` | Neon direct URL (the same without `-pooler`); only the build uses it, to migrate |
+| `DB_POOL_MAX` | `3` |
+| `OUTBOX_POLL_MS`, `REMINDERS_INTERVAL_MS` | `0` (the timers cannot run; the cron and `waitUntil` replace them) |
+| `CRON_SECRET` | 32+ random chars; Vercel Cron sends it to `/v1/cron/daily` |
+| `JWT_SECRET`, `OTP_PEPPER` | 32+ random chars each |
+| `TRUST_PROXY` | `true` |
+| `PUBLIC_WEB_URL` | the PWA's URL |
+| `S3_ENDPOINT` | `https://<account-id>.r2.cloudflarestorage.com` |
+| `S3_REGION` | `auto` |
+| `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` | the R2 bucket and an R2 API token (Object Read & Write) |
+| `OTP_FIXED_CODE` | only while there is no SMS gateway (the console gateway sends nothing) |
+| `VAPID_*` | optional, ADR-016 |
+
+Production deploys migrate first, preview deploys never do. Then check `https://<api>/v1/health`.
+
+**PWA**: repository `Mezgeb-PWA`, the repository root. The build command comes from its
+`vercel.json`. Environment: `API_ORIGIN=https://<api>.vercel.app` (the PWA proxies `/v1/*` there,
+so leave `VITE_API_URL` empty), `VITE_SUPPORT_PHONE`, `ANDROID_CERT_SHA256`.
 
 ## Backups
 

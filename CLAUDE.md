@@ -238,3 +238,11 @@ Tests:
   until the current one's acceptance checks pass.
 - Before changing behaviour described in the specs, check `docs/decisions/`. If something is
   unclear or the specs conflict, stop and ask rather than guess; record the answer as a new ADR.
+
+Hosting (ADR-017): Vercel + Neon + Cloudflare R2, setup in `docs/deployment.md`.
+
+- `apps/api/api/index.js` → `src/serverless.ts` (one Nest app per function instance; after each
+  write it drains the outbox with `waitUntil`). `apps/api/vercel.json` builds, migrates production
+  deploys on `DATABASE_URL_UNPOOLED`, and calls `GET /v1/cron/daily` (`CronModule`, mounted only
+  with `CRON_SECRET`) once a day for reminders and leftover outbox rows.
+- Keep the in-process timers working too: the Docker image is still the other way to host.

@@ -21,7 +21,7 @@ export type Db = NodePgDatabase<typeof schema>;
           connectionString: config.DATABASE_URL,
           // Entry writes hold a connection while they wait for the account row lock (ADR-001),
           // so a burst on one busy account queues for connections: allow room and time.
-          max: 20,
+          max: config.DB_POOL_MAX,
           connectionTimeoutMillis: 10_000,
         });
         // An idle client losing its connection must not crash the process.

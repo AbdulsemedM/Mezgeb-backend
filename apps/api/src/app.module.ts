@@ -3,6 +3,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { APP_CONFIG, ConfigModule } from './config/config.module.js';
 import { type AppConfig, parseEnv } from './config/env.schema.js';
 import { DbModule } from './db/db.module.js';
+import { CronModule } from './cron/cron.module.js';
 import { DevModule } from './dev/dev.module.js';
 import { AccessModule } from './access/access.module.js';
 import { AccountsModule } from './accounts/accounts.module.js';
@@ -23,7 +24,7 @@ import { UsersModule } from './users/users.module.js';
 @Module({})
 export class AppModule {
   static forRoot(env?: Record<string, string | undefined>): DynamicModule {
-    const { DEV_ROUTES } = parseEnv(env ?? process.env);
+    const { DEV_ROUTES, CRON_SECRET } = parseEnv(env ?? process.env);
     return {
       module: AppModule,
       imports: [
@@ -55,6 +56,7 @@ export class AppModule {
         StatementsModule,
         SyncModule,
         ...(DEV_ROUTES ? [DevModule] : []),
+        ...(CRON_SECRET ? [CronModule] : []),
       ],
     };
   }

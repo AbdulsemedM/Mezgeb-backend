@@ -63,6 +63,13 @@ export const envSchema = z
     SMS_CAP_SHOP_PLUS: z.coerce.number().int().min(0).default(5000),
     /** How often the reminders job runs; 0 disables it (tests call runOnce). */
     REMINDERS_INTERVAL_MS: z.coerce.number().int().min(0).default(3_600_000),
+    /** Postgres connections per process. Serverless instances (ADR-017) keep it small. */
+    DB_POOL_MAX: z.coerce.number().int().min(1).default(20),
+    /**
+     * ADR-017: bearer secret for `GET /v1/cron/daily` (Vercel Cron sends it). Unset: the route
+     * answers 404, as on hosts where the in-process timers run.
+     */
+    CRON_SECRET: z.string().min(16).optional(),
     /**
      * Dev-only routes under /v1/dev (e.g. reading the last OTP for the mobile integration test).
      * Off by default and refused outside NODE_ENV=development.

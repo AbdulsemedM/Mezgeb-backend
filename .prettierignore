@@ -1,5 +1,6 @@
 node_modules
 dist
+.vercel
 coverage
 pnpm-lock.yaml
 # Docs are hand-written; never reformat them.
