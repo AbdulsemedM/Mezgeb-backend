@@ -5,3 +5,4 @@ node_modules
 **/dist
 coverage
 .vercel
+apps/sms-relay/relay.env

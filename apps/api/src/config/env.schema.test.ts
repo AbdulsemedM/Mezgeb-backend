@@ -57,4 +57,44 @@ describe('parseEnv', () => {
       expect((err as InvalidEnvError).issues.length).toBeGreaterThanOrEqual(5);
     }
   });
+
+  it('defaults to the console SMS gateway', () => {
+    expect(parseEnv(valid).SMS_PROVIDER).toBe('console');
+  });
+
+  it('needs Coopbank credentials for SMS_PROVIDER=coopbank', () => {
+    expect(() => parseEnv({ ...valid, SMS_PROVIDER: 'coopbank' })).toThrow(
+      /COOPBANK_SMS_CLIENT_SECRET/,
+    );
+    const config = parseEnv({
+      ...valid,
+      SMS_PROVIDER: 'coopbank',
+      COOPBANK_SMS_CLIENT_ID: 'id',
+      COOPBANK_SMS_CLIENT_SECRET: 'secret',
+    });
+    expect(config.COOPBANK_SMS_SEND_URL).toMatch(/^https:\/\//);
+  });
+
+  it('refuses OTP_FIXED_CODE with real SMS', () => {
+    expect(() =>
+      parseEnv({
+        ...valid,
+        SMS_PROVIDER: 'coopbank',
+        COOPBANK_SMS_CLIENT_ID: 'id',
+        COOPBANK_SMS_CLIENT_SECRET: 'secret',
+        OTP_FIXED_CODE: '654321',
+      }),
+    ).toThrow(/OTP_FIXED_CODE/);
+  });
+
+  it('needs Upstash settings for SMS_PROVIDER=queue', () => {
+    expect(() => parseEnv({ ...valid, SMS_PROVIDER: 'queue' })).toThrow(/UPSTASH_REDIS_REST_TOKEN/);
+    const config = parseEnv({
+      ...valid,
+      SMS_PROVIDER: 'queue',
+      UPSTASH_REDIS_REST_URL: 'https://x.upstash.io',
+      UPSTASH_REDIS_REST_TOKEN: 't',
+    });
+    expect(config.SMS_QUEUE_KEY).toBe('mezgeb:sms');
+  });
 });

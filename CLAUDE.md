@@ -58,7 +58,8 @@ Node 22, pnpm 10 (no Bun). Docker must be running for integration tests and loca
   **localhost:55432** (5432/5433 are taken by local installs on the dev machine) and MinIO on
   9000 (console 9001, bucket `mezgeb-dev`).
 - `pnpm --filter @mezgeb/api dev` — builds `@mezgeb/shared`, then runs the API in watch mode on
-  :3000, reading `../../.env`. The console SMS gateway logs OTP codes there.
+  :3000, reading `../../.env`. With `SMS_PROVIDER=console` (default) the gateway logs OTP codes
+  there; `SMS_PROVIDER=coopbank` sends real SMS through Cooperative Bank of Oromia (ADR-018).
   With `DEV_ROUTES=true` (allowed only in development) `GET /v1/dev/otp?phone=` returns the last
   code sent to a phone, for the mobile app's on-device integration test (`apps/api/src/dev/`).
 - `pnpm test` — all Vitest suites; API integration tests start their own Postgres via Testcontainers.
@@ -214,6 +215,10 @@ Database (schema in `apps/api/src/db/schema.ts`, one file on purpose; migrations
 - `pnpm build && pnpm --filter @mezgeb/api openapi` — regenerate `docs/api/openapi.json` after
   changing a route or schema (`listRoutes()` in `src/openapi/routes.ts` reads the controllers;
   add a new controller to `API_CONTROLLERS`). A test fails if the file is stale.
+- SMS (`src/sms/`, ADR-018): `SMS_PROVIDER=console | coopbank | queue`. Coopbank's firewall blocks
+  Vercel, so production uses `queue`: the API LPUSHes to Upstash Redis and `apps/sms-relay/relay.mjs`
+  (no deps, on a bank server, cron + flock) sends through Coopbank. Neon is free tier: don't add
+  polling that hits the API or database.
 - `docker build -t mezgeb-api .` — the image (`ops/start.sh` migrates, then starts).
   `ops/backup.sh` / `ops/restore.sh`, see `docs/deployment.md` and `docs/security-checklist.md`.
 

@@ -18,13 +18,33 @@ export const envSchema = z
     /** HMAC key for OTP codes at rest. */
     OTP_PEPPER: z.string().min(32),
     /**
-     * Every OTP is this code instead of a random one, until a real SMS gateway exists.
-     * Unset: random codes. Remove before launch.
+     * Every OTP is this code instead of a random one, for SMS_PROVIDER=console only.
+     * Unset: random codes. Refused with SMS_PROVIDER=coopbank.
      */
     OTP_FIXED_CODE: z
       .string()
       .regex(/^\d{6}$/, 'must be 6 digits')
       .optional(),
+    /**
+     * ADR-018: `console` logs SMS (dev/tests), `coopbank` sends them through Cooperative Bank of
+     * Oromia's SMS API (OAuth2 client_credentials, then `POST {phone_number, text}`).
+     */
+    SMS_PROVIDER: z.enum(['console', 'coopbank', 'queue']).default('console'),
+    /**
+     * ADR-018 `queue`: the API pushes SMS to this Upstash Redis list and the relay on a bank
+     * server (`apps/sms-relay`) sends them through Coopbank.
+     */
+    UPSTASH_REDIS_REST_URL: z.url().optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+    SMS_QUEUE_KEY: z.string().min(1).default('mezgeb:sms'),
+    COOPBANK_SMS_TOKEN_URL: z
+      .url()
+      .default('https://controlplane-apim-uat.coopbankoromiasc.com/oauth2/token'),
+    COOPBANK_SMS_SEND_URL: z
+      .url()
+      .default('https://externalgateway-apim-uat.coopbankoromiasc.com/api/sms/1.0.0/send'),
+    COOPBANK_SMS_CLIENT_ID: z.string().min(1).optional(),
+    COOPBANK_SMS_CLIENT_SECRET: z.string().min(1).optional(),
     /** Trust X-Forwarded-For (behind a load balancer) for per-IP OTP limits. */
     TRUST_PROXY: z.stringbool().default(false),
     /** Base URL of the customer PWA; invite links point here (ADR-006). */
@@ -79,6 +99,28 @@ export const envSchema = z
   .refine((env) => !env.DEV_ROUTES || env.NODE_ENV === 'development', {
     path: ['DEV_ROUTES'],
     message: 'DEV_ROUTES is only allowed with NODE_ENV=development',
+  })
+  .refine(
+    (env) =>
+      env.SMS_PROVIDER !== 'coopbank' ||
+      (env.COOPBANK_SMS_CLIENT_ID !== undefined && env.COOPBANK_SMS_CLIENT_SECRET !== undefined),
+    {
+      path: ['COOPBANK_SMS_CLIENT_SECRET'],
+      message: 'SMS_PROVIDER=coopbank needs COOPBANK_SMS_CLIENT_ID and COOPBANK_SMS_CLIENT_SECRET',
+    },
+  )
+  .refine(
+    (env) =>
+      env.SMS_PROVIDER !== 'queue' ||
+      (env.UPSTASH_REDIS_REST_URL !== undefined && env.UPSTASH_REDIS_REST_TOKEN !== undefined),
+    {
+      path: ['UPSTASH_REDIS_REST_TOKEN'],
+      message: 'SMS_PROVIDER=queue needs UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN',
+    },
+  )
+  .refine((env) => env.SMS_PROVIDER === 'console' || !env.OTP_FIXED_CODE, {
+    path: ['OTP_FIXED_CODE'],
+    message: 'Unset OTP_FIXED_CODE when real SMS are sent (SMS_PROVIDER=coopbank or queue)',
   })
   .refine((env) => !env.VAPID_PUBLIC_KEY === !env.VAPID_PRIVATE_KEY, {
     path: ['VAPID_PRIVATE_KEY'],

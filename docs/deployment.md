@@ -40,7 +40,9 @@ the root directory" on; the workspace builds `@mezgeb/shared`). Everything else 
 | `S3_ENDPOINT` | `https://<account-id>.r2.cloudflarestorage.com` |
 | `S3_REGION` | `auto` |
 | `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` | the R2 bucket and an R2 API token (Object Read & Write) |
-| `OTP_FIXED_CODE` | only while there is no SMS gateway (the console gateway sends nothing) |
+| `SMS_PROVIDER` | `queue` (ADR-018: Coopbank blocks Vercel, the relay on a bank server sends); `console` only logs |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | the Upstash Redis database the relay reads |
+| `OTP_FIXED_CODE` | unset; only with `SMS_PROVIDER=console` |
 | `VAPID_*` | optional, ADR-016 |
 
 Production deploys migrate first, preview deploys never do. Then check `https://<api>/v1/health`.
@@ -66,4 +68,4 @@ counts, a second restore refused, chains verified (0 broken).
 - Vision proxy (`POST /v1/vision/detect`): dropped with the photo sale (owner decision).
 - Load test with 10k merchants and 1M accounts, and business KPI metrics: once there is a host
   to run them on.
-- Release signing for the app, Firebase (push), the production SMS gateway.
+- Release signing for the app, Firebase (push), production credentials for the Coopbank SMS gateway (UAT works; relay in `apps/sms-relay`, ADR-018).
